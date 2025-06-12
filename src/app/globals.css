@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* GRIZZLAND Brand Colors */
+  --primary-bg: #1a2c28;
+  --primary-text: #ffffff;
+  --card-bg: #ffffff;
+  --card-text: #1a2c28;
+  --border-color: #ffffff;
+  --overlay-bg: rgba(26, 44, 40, 0.8);
+  
+  /* Typography Scale */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Spacing System */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Button Styles */
+.btn-primary {
+  @apply inline-flex items-center justify-center px-6 py-3 border border-white bg-transparent text-white text-sm font-medium uppercase tracking-wide rounded-md transition-all duration-300 ease-in-out;
+}
+
+.btn-primary:hover {
+  @apply bg-white text-primary-bg transform -translate-y-0.5;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-6 py-3 border border-white bg-white text-primary-bg text-sm font-medium uppercase tracking-wide rounded-md transition-all duration-300 ease-in-out;
+}
+
+.btn-secondary:hover {
+  @apply bg-transparent text-white border-white;
+}
+
+/* Custom Card Styles */
+.product-card {
+  @apply bg-white rounded-lg overflow-hidden transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-2xl;
+}
+
+.product-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading Spinner */
+.loader {
+  @apply inline-block w-5 h-5 border-2 border-gray-300 border-t-white rounded-full animate-spin;
+}
+
+/* Slide Over Animation */
+.slide-over-enter {
+  transform: translateX(100%);
+}
+
+.slide-over-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease-in-out;
+}
+
+.slide-over-exit {
+  transform: translateX(0);
+}
+
+.slide-over-exit-active {
+  transform: translateX(100%);
+  transition: transform 300ms ease-in-out;
+}
+
+/* Form Styles */
+.form-input {
+  @apply w-full px-4 py-3 border border-white bg-transparent text-white rounded-md transition-all duration-300 focus:outline-none focus:border-white focus:ring-2 focus:ring-white focus:ring-opacity-20;
+}
+
+.form-input::placeholder {
+  @apply text-gray-400;
+}
+
+/* Color Swatch Styles */
+.color-swatch {
+  @apply w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all duration-300 hover:scale-110;
+}
+
+.color-swatch.selected {
+  @apply border-white ring-2 ring-primary-bg;
+}
+
+/* Size Option Styles */
+.size-option {
+  @apply px-4 py-2 border border-white bg-transparent text-white text-sm font-medium uppercase rounded-md cursor-pointer transition-all duration-300;
+}
+
+.size-option:hover {
+  @apply bg-white text-primary-bg;
+}
+
+.size-option.selected {
+  @apply bg-card-text text-card-bg border-white;
+}
+
+/* Accessibility */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+}
+
+/* Focus styles for accessibility */
+.focus-outline {
+  @apply focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .mobile-nav {
+    @apply flex-col gap-4;
+  }
+  
+  .mobile-grid {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+}
+
+/* Animation classes */
+.fade-in {
+  @apply animate-fade-in;
+}
+
+.slide-up {
+  @apply animate-slide-up;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--primary-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.8);
+} 
