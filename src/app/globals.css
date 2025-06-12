@@ -157,6 +157,149 @@ body {
   @apply animate-slide-up;
 }
 
+/* Hero Section Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 1.2s ease-out forwards;
+}
+
+.animate-fade-in-delayed {
+  animation: fadeInUp 1.5s ease-out 0.3s both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out forwards;
+}
+
+/* Hero specific animations */
+.hero-title {
+  animation: fadeInUp 1.5s ease-out 0.2s both;
+}
+
+.hero-subtitle {
+  animation: fadeInUp 1.5s ease-out 0.5s both;
+}
+
+.hero-cta {
+  animation: fadeInUp 1.5s ease-out 0.8s both;
+}
+
+/* Brand Elements Animation */
+.hero-brand {
+  animation: fadeIn 2.5s ease-out 1.5s both;
+}
+
+.hero-brand-subtitle {
+  animation: fadeIn 3s ease-out 2s both;
+}
+
+/* Hero Background Image Optimization */
+.hero-background {
+  background-attachment: fixed;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Enhanced hero section for better image display */
+.hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.hero-image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Full image display optimization */
+.hero-image-container > div {
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+/* Ensure proper image scaling on different screen sizes */
+@media (max-width: 768px) {
+  .hero-background {
+    background-attachment: scroll;
+    background-size: cover;
+    background-position: center center;
+  }
+  
+  .hero-section {
+    height: 100vh;
+    min-height: 100vh;
+  }
+
+  .hero-image-container > div {
+    background-attachment: scroll !important;
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+}
+
+/* Desktop optimization for full image visibility */
+@media (min-width: 1024px) {
+  .hero-image-container > div {
+    background-size: cover !important;
+    background-position: center center !important;
+    transform: scale(1.0);
+  }
+}
+
+/* Ultra-wide screen optimization */
+@media (min-width: 1440px) {
+  .hero-image-container > div {
+    background-size: 100% auto !important;
+    background-position: center center !important;
+    min-height: 100vh;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

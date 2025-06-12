@@ -27,17 +27,6 @@ const Header = () => {
   return (
     <>
       <header className="bg-primary-bg border-b border-white">
-        {/* Promo Bar */}
-        <div className="bg-primary-bg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-2 text-center">
-              <p className="text-sm text-white uppercase tracking-wide">
-                Free shipping on orders over $75
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Main Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

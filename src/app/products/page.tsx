@@ -60,7 +60,7 @@ export default function ProductsPage() {
             Shop Collection
           </h1>
           <p className="text-lg text-white opacity-80 max-w-2xl mx-auto">
-            Discover our complete range of premium streetwear pieces designed for the modern urban lifestyle.
+            Discover our complete range of premium outdoor pieces designed for the modern urban lifestyle.
           </p>
         </div>
 

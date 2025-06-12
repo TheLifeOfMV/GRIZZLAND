@@ -19,11 +19,12 @@ const Hero: React.FC<ExtendedHeroProps> = ({
   ctaLink,
 }) => {
   const [videoError, setVideoError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <section className="hero-section flex items-center justify-center">
       {/* Background Media */}
-      <div className="absolute inset-0 z-0">
+      <div className="hero-image-container">
         {backgroundVideo && !videoError ? (
           <video
             className="w-full h-full object-cover"
@@ -37,77 +38,81 @@ const Hero: React.FC<ExtendedHeroProps> = ({
             <source src={backgroundVideo} type="video/mp4" />
             <source src={backgroundVideo.replace('.mp4', '.webm')} type="video/webm" />
           </video>
-        ) : backgroundImage ? (
-          <Image
-            src={backgroundImage}
-            alt="GRIZZLAND Hero Background"
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
+        ) : backgroundImage && !imageError ? (
+          <>
+            {/* Full Width Background Image - Adaptive Sizing */}
+            <div
+              className="absolute inset-0 w-full h-full"
+              style={{
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: '100vw auto',
+                backgroundPosition: 'center center',
+                backgroundRepeat: 'no-repeat',
+                minWidth: '100vw',
+                minHeight: '100vh'
+              }}
+            />
+            {/* Backup layer for coverage */}
+            <div
+              className="absolute inset-0 w-full h-full -z-10"
+              style={{
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+                backgroundRepeat: 'no-repeat',
+                filter: 'blur(2px) brightness(0.7)'
+              }}
+            />
+          </>
         ) : (
           /* Fallback gradient background */
           <div className="w-full h-full bg-gradient-to-br from-primary-bg via-gray-800 to-gray-900" />
         )}
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-overlay bg-opacity-60" />
+        {/* Enhanced Overlay with better visibility */}
+        <div className="absolute inset-0 bg-black bg-opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="space-y-8 animate-fade-in">
+      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div className="space-y-10">
           {/* Main Title */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white uppercase tracking-widest leading-tight">
+          <h1 className="hero-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white uppercase tracking-[0.15em] leading-tight drop-shadow-2xl">
             {title}
           </h1>
           
           {/* Subtitle */}
           {subtitle && (
-            <p className="text-lg sm:text-xl md:text-2xl text-white opacity-90 max-w-2xl mx-auto leading-relaxed">
+            <p className="hero-subtitle text-xl sm:text-2xl md:text-3xl text-white opacity-95 max-w-3xl mx-auto leading-relaxed font-light tracking-wide drop-shadow-lg">
               {subtitle}
             </p>
           )}
 
           {/* CTA Button */}
-          <div className="pt-8">
+          <div className="hero-cta pt-12">
             <Link
               href={ctaLink}
-              className="btn-primary text-lg px-8 py-4 hover:scale-105 transform transition-all duration-300 inline-block"
+              className="inline-flex items-center justify-center px-10 py-5 border-2 border-white bg-transparent text-white text-lg font-semibold uppercase tracking-[0.1em] rounded-md transition-all duration-500 ease-out hover:bg-white hover:text-primary-bg hover:scale-110 hover:shadow-2xl transform focus:outline-none focus:ring-4 focus:ring-white/30"
               aria-label={`${ctaText} - Navigate to products`}
             >
               {ctaText}
             </Link>
           </div>
 
-          {/* Scroll Indicator */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <div className="flex flex-col items-center text-white opacity-75">
-              <span className="text-sm uppercase tracking-wider mb-2">Scroll</span>
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                />
-              </svg>
-            </div>
-          </div>
+
         </div>
       </div>
 
       {/* Brand Elements */}
-      <div className="absolute bottom-4 right-4 z-10">
-        <div className="text-white opacity-50 text-sm uppercase tracking-widest">
-          GRIZZLAND
+      <div className="absolute bottom-6 right-6 z-10">
+        <div className="text-right space-y-1">
+          <div className="hero-brand text-white opacity-70 text-sm uppercase tracking-[0.3em] font-semibold drop-shadow-lg hover:opacity-95 transition-opacity duration-300">
+            GRIZZLAND
+          </div>
+          <div className="hero-brand-subtitle text-white opacity-55 text-xs uppercase tracking-[0.25em] font-light drop-shadow-md hover:opacity-85 transition-opacity duration-300">
+            Hunter's Club
+          </div>
         </div>
       </div>
     </section>
@@ -119,8 +124,8 @@ const DefaultHero: React.FC = () => {
   return (
     <Hero
       title="GRIZZLAND"
-      subtitle="Premium streetwear that defines your style. Discover our signature collection."
-      backgroundImage="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop&q=80"
+      subtitle="Not just fashion, identity. Discover our outdoor signature collection."
+      backgroundImage="/images/hero-background.png"
       ctaText="SHOP NOW"
       ctaLink="/products"
     />

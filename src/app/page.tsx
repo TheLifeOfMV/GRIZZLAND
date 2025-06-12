@@ -20,7 +20,7 @@ export default function HomePage() {
               Featured Collection
             </h2>
             <p className="text-lg text-white opacity-80 max-w-2xl mx-auto">
-              Discover our most popular pieces, crafted with premium materials and designed for the modern urban lifestyle.
+              Discover our most wanted pieces and freshest arrivals, crafted for comfort, built for adventure, and styled for the outdoors.
             </p>
           </div>
 
@@ -61,7 +61,7 @@ export default function HomePage() {
               href="/products"
               className="btn-primary text-lg px-8 py-4 hover:scale-105 transform transition-all duration-300 inline-block"
             >
-              SHOP ALL PRODUCTS
+              VIEW ALL PRODUCTS
             </Link>
           </div>
         </div>
@@ -75,10 +75,10 @@ export default function HomePage() {
           </h2>
           <div className="space-y-6 text-lg text-white opacity-90 leading-relaxed">
             <p>
-              Born from the streets and inspired by urban culture, GRIZZLAND represents more than just clothing—it's a lifestyle, an attitude, a statement.
+            Born in the streets of Colombia and shaped by the wild, GRIZZLAND fuses urban edge with outdoor design. More than fashion, it’s a movement, mindset, and identity.
             </p>
             <p>
-              Our signature silhouette designs capture the essence of modern streetwear while maintaining the premium quality and attention to detail that defines our brand.
+              Our signature silhouette designs capture the essence of modern outdoor design while maintaining the premium quality and attention to detail that defines our brand.
             </p>
             <p>
               Every piece is crafted with purpose, designed for those who dare to stand out and express their unique style with confidence.
