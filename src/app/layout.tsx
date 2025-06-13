@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/hooks/useCart';
+import { AuthProvider } from '@/lib/auth-context';
 import Header from '@/components/layout/Header';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
@@ -90,13 +91,14 @@ export default function RootLayout({
           Skip to main content
         </a>
         
-        <CartProvider>
-          <ErrorBoundary>
-            <div className="min-h-screen flex flex-col">
-              <Header />
-              <main id="main-content" className="flex-1">
-                {children}
-              </main>
+        <AuthProvider>
+          <CartProvider>
+            <ErrorBoundary>
+              <div className="min-h-screen flex flex-col">
+                <Header />
+                <main id="main-content" className="flex-1">
+                  {children}
+                </main>
             <footer className="bg-primary-bg border-t border-white py-8">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
@@ -130,9 +132,10 @@ export default function RootLayout({
                 </div>
               </div>
             </footer>
-          </div>
-          </ErrorBoundary>
-        </CartProvider>
+            </div>
+            </ErrorBoundary>
+          </CartProvider>
+        </AuthProvider>
 
         {/* Performance monitoring script placeholder */}
         <script
