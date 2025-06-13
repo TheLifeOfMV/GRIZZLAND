@@ -505,4 +505,206 @@ input[type="checkbox"]:checked {
   .button {
     @apply w-full justify-center;
   }
+}
+
+/* ===== ABOUT PAGE SPECIFIC STYLES ===== */
+
+/* Hero Section Enhancements */
+.about-hero-title {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.15em;
+}
+
+.about-scroll-indicator {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    opacity: 0.7;
+  }
+  50% { 
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+    opacity: 1;
+  }
+}
+
+/* Brand Story Section */
+.brand-story-card {
+  backdrop-filter: blur(10px);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.brand-story-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.brand-values-grid {
+  perspective: 1000px;
+}
+
+.brand-values-card {
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.brand-values-card:hover {
+  transform: rotateY(5deg) rotateX(5deg);
+}
+
+/* Model Showcase Enhancements */
+.model-showcase-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.model-showcase-image::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 30%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 70%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.8s ease;
+  z-index: 1;
+}
+
+.model-showcase-image:hover::before {
+  transform: translateX(100%);
+}
+
+/* Product Feature Cards */
+.product-feature-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s ease;
+}
+
+.product-feature-card:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px);
+}
+
+/* Color Swatch Interactions */
+.color-swatch-interactive {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.color-swatch-interactive::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.color-swatch-interactive:hover::after {
+  opacity: 1;
+}
+
+/* Statistics Section */
+.about-stats-number {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Section Dividers */
+.about-section-divider {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  height: 1px;
+  margin: 4rem 0;
+}
+
+/* Responsive Optimizations for About Page */
+@media (max-width: 768px) {
+  .about-hero-title {
+    letter-spacing: 0.1em;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .brand-story-card {
+    margin-bottom: 2rem;
+  }
+  
+  .brand-values-card:hover {
+    transform: none;
+  }
+  
+  .model-showcase-image::before {
+    display: none;
+  }
+}
+
+/* Dark Mode Specific Enhancements */
+@media (prefers-color-scheme: dark) {
+  .about-scroll-indicator {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .brand-story-card {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--primary-bg);
+  }
+  
+  .product-feature-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  }
+}
+
+/* High Performance Animations */
+.about-performance-optimized {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .about-scroll-indicator {
+    animation: none;
+  }
+  
+  .brand-values-card:hover {
+    transform: none;
+  }
+  
+  .model-showcase-image::before {
+    display: none;
+  }
+}
+
+/* Print Styles for About Page */
+@media print {
+  .about-scroll-indicator {
+    display: none;
+  }
+  
+  .model-showcase-image::before {
+    display: none;
+  }
+  
+  .brand-story-card,
+  .product-feature-card {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
 } 
