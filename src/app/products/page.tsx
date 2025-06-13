@@ -7,7 +7,7 @@ import { Product } from '@/types';
 import { FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 
 export default function ProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('T-SHIRTS');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -16,10 +16,8 @@ export default function ProductsPage() {
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = MOCK_PRODUCTS;
 
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
+    // Filter by category - always filter since we no longer have 'All'
+    filtered = filtered.filter(product => product.category === selectedCategory);
 
     // Sort products
     const sorted = [...filtered].sort((a, b) => {
@@ -139,7 +137,7 @@ export default function ProductsPage() {
         <div className="flex justify-between items-center mb-8">
           <p className="text-white opacity-75">
             Showing {filteredAndSortedProducts.length} of {MOCK_PRODUCTS.length} products
-            {selectedCategory !== 'All' && ` in ${selectedCategory}`}
+            in {selectedCategory}
           </p>
         </div>
 
@@ -173,7 +171,7 @@ export default function ProductsPage() {
             </p>
             <button
               onClick={() => {
-                setSelectedCategory('All');
+                setSelectedCategory('T-SHIRTS');
                 setSortBy('featured');
               }}
               className="btn-primary"
@@ -199,18 +197,16 @@ export default function ProductsPage() {
         )}
 
         {/* Category Description */}
-        {selectedCategory !== 'All' && (
-          <div className="mt-16 text-center">
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-2xl font-semibold text-white uppercase tracking-wide mb-4">
-                {selectedCategory}
-              </h2>
-              <p className="text-white opacity-80">
-                {getCategoryDescription(selectedCategory)}
-              </p>
-            </div>
+        <div className="mt-16 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-semibold text-white uppercase tracking-wide mb-4">
+              {selectedCategory}
+            </h2>
+            <p className="text-white opacity-80">
+              {getCategoryDescription(selectedCategory)}
+            </p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -219,12 +215,9 @@ export default function ProductsPage() {
 // Helper function to get category descriptions
 function getCategoryDescription(category: string): string {
   const descriptions: Record<string, string> = {
-    'T-Shirts': 'Our premium t-shirt collection features comfortable cuts and signature GRIZZLAND designs.',
-    'Hoodies': 'Stay warm and stylish with our luxury hoodie collection, perfect for any season.',
-    'Jackets': 'Elevate your outerwear game with our collection of premium jackets and coats.',
-    'Tank Tops': 'Lightweight and breathable tank tops designed for active lifestyles.',
-    'Shorts': 'Comfortable and stylish shorts perfect for workouts or casual wear.',
-    'Long Sleeves': 'Versatile long sleeve pieces that work perfectly for layering.',
+    'T-SHIRTS': 'Our premium t-shirt collection features comfortable cuts and signature GRIZZLAND designs.',
+    'HOODIES': 'Stay warm and stylish with our luxury hoodie collection, perfect for any season.',
+    'LONG SLEEVES': 'Versatile long sleeve pieces that work perfectly for layering.',
   };
   
   return descriptions[category] || 'Discover our premium collection of streetwear essentials.';
