@@ -1,16 +1,28 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/features/ProductCard';
 import { MOCK_PRODUCTS, PRODUCT_CATEGORIES } from '@/lib/data';
 import { Product } from '@/types';
 import { FunnelIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 
 export default function ProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>('T-SHIRTS');
+  const searchParams = useSearchParams();
+  const categoryFromUrl = searchParams.get('category') || 'T-SHIRTS';
+  
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl);
   const [sortBy, setSortBy] = useState<string>('featured');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // Update category when URL changes
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category') || 'T-SHIRTS';
+    if (PRODUCT_CATEGORIES.includes(categoryFromUrl)) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [searchParams]);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {

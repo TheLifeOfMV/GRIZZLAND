@@ -20,10 +20,20 @@ const Header = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Shop', href: '/products' },
+    { 
+      name: 'Shop', 
+      href: '/products',
+      hasDropdown: true,
+      categories: [
+        { name: 'T-SHIRTS', href: '/products?category=T-SHIRTS' },
+        { name: 'HOODIES', href: '/products?category=HOODIES' },
+        { name: 'LONG SLEEVES', href: '/products?category=LONG SLEEVES' },
+      ]
+    },
     { name: 'About Us', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
@@ -52,7 +62,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-primary-bg border-b border-white">
+      <header className="bg-primary-bg border-b border-white relative z-50">
         {/* Main Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -75,13 +85,54 @@ const Header = () => {
             {/* Navigation - Desktop */}
             <nav className="hidden md:flex space-x-8">
               {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-white hover:text-gray-300 text-sm font-medium uppercase tracking-wide transition-colors duration-300 focus-outline"
-                >
-                  {item.name}
-                </Link>
+                <div key={item.name} className="relative">
+                  {item.hasDropdown ? (
+                    // Shop with dropdown
+                    <div
+                      className="relative group"
+                      onMouseEnter={() => setIsShopDropdownOpen(true)}
+                      onMouseLeave={() => setIsShopDropdownOpen(false)}
+                    >
+                      <Link
+                        href={item.href}
+                        className="nav-link-dropdown text-white hover:text-gray-300 text-sm font-medium uppercase tracking-wide transition-colors duration-300 focus-outline inline-flex items-center"
+                      >
+                        {item.name}
+                        <span className={`ml-1 text-xs transition-transform duration-200 ${isShopDropdownOpen ? 'rotate-180' : ''}`}>
+                          ▼
+                        </span>
+                      </Link>
+                      
+                      {/* Dropdown Menu */}
+                      <div
+                        className={`dropdown-menu absolute top-full left-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 ease-out ${
+                          isShopDropdownOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
+                        }`}
+                        style={{ zIndex: 9999 }}
+                      >
+                        {item.categories?.map((category, index) => (
+                          <Link
+                            key={category.name}
+                            href={category.href}
+                            className={`dropdown-item block px-4 py-3 text-sm font-medium text-primary-bg uppercase tracking-wide transition-all duration-200 hover:bg-primary-bg hover:text-white ${
+                              index !== item.categories.length - 1 ? 'border-b border-gray-100' : ''
+                            }`}
+                          >
+                            {category.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // Regular navigation item
+                    <Link
+                      href={item.href}
+                      className="text-white hover:text-gray-300 text-sm font-medium uppercase tracking-wide transition-colors duration-300 focus-outline inline-flex items-center"
+                    >
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
             </nav>
 
@@ -252,14 +303,30 @@ const Header = () => {
             <div className="md:hidden border-t border-white">
               <div className="px-2 pt-2 pb-3 space-y-1">
                 {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-white hover:text-gray-300 block px-3 py-2 text-base font-medium uppercase tracking-wide transition-colors duration-300 focus-outline"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
+                  <div key={item.name}>
+                    <Link
+                      href={item.href}
+                      className="text-white hover:text-gray-300 block px-3 py-2 text-base font-medium uppercase tracking-wide transition-colors duration-300 focus-outline"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                    {/* Mobile Shop Categories */}
+                    {item.hasDropdown && item.categories && (
+                      <div className="ml-4 space-y-1">
+                        {item.categories.map((category) => (
+                          <Link
+                            key={category.name}
+                            href={category.href}
+                            className="text-white hover:text-gray-300 block px-3 py-1 text-sm font-medium uppercase tracking-wide transition-colors duration-300 focus-outline opacity-80"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {category.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
