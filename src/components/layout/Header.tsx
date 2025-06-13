@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/lib/auth-context';
 import CartSlideOver from '@/components/features/CartSlideOver';
@@ -65,7 +66,7 @@ const Header = () => {
       <header className="bg-primary-bg border-b border-white relative z-50">
         {/* Main Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="relative flex items-center justify-between h-16">
             {/* Mobile menu button */}
             <div className="md:hidden">
               <button
@@ -137,13 +138,18 @@ const Header = () => {
             </nav>
 
             {/* Logo */}
-            <div className="flex-1 flex justify-center md:justify-center">
-              <Link 
-                href="/" 
-                className="text-2xl font-bold text-white uppercase tracking-widest hover:text-gray-300 transition-colors duration-300 focus-outline"
-              >
-                GRIZZLAND
-              </Link>
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
+              <div className="flex items-center space-x-2 md:space-x-3 text-xl md:text-2xl font-bold text-white uppercase tracking-widest">
+                <Image
+                  src="/images/LOGO.png"
+                  alt="GRIZZLAND Logo"
+                  width={47}
+                  height={47}
+                  className="w-10 h-10 md:w-12 md:h-12 object-contain flex-shrink-0"
+                  priority
+                />
+                <span>GRIZZLAND</span>
+              </div>
             </div>
 
             {/* Icons */}
