@@ -48,13 +48,25 @@ export default function HomePage() {
               gap={24}
               className="mb-12"
             >
-              {FEATURED_PRODUCTS.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  showQuickAdd={true}
-                />
-              ))}
+              {FEATURED_PRODUCTS.map((product, index) => {
+                let badgeText;
+                if (index === 0) {
+                  badgeText = 'NEW';
+                } else if (index === 1 || index === 2) {
+                  badgeText = 'BEST SELLER';
+                } else {
+                  badgeText = 'FEATURED';
+                }
+                
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    showQuickAdd={true}
+                    customBadge={badgeText}
+                  />
+                );
+              })}
             </Carousel>
           ) : (
             <div className="text-center py-16">

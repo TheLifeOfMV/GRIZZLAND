@@ -13,12 +13,14 @@ interface ProductCardProps {
   product: Product;
   onQuickView?: (product: Product) => void;
   showQuickAdd?: boolean;
+  customBadge?: string;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ 
   product, 
   onQuickView,
-  showQuickAdd = true 
+  showQuickAdd = true,
+  customBadge
 }) => {
   const { addToCart } = useCart();
   const [isLiked, setIsLiked] = useState(false);
@@ -131,11 +133,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
 
-          {/* Featured Badge */}
-          {product.featured && (
+          {/* Badge */}
+          {(customBadge || product.featured) && (
             <div className="absolute top-4 left-4">
               <span className="bg-primary-bg text-white text-xs font-medium px-2 py-1 rounded-md uppercase tracking-wide">
-                Featured
+                {customBadge || 'Featured'}
               </span>
             </div>
           )}

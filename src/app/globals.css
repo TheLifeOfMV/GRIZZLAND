@@ -206,6 +206,10 @@ body {
   animation: fadeInUp 1.5s ease-out 0.2s both;
 }
 
+.hero-hunters-club {
+  animation: fadeInUp 1.5s ease-out 0.35s both;
+}
+
 .hero-subtitle {
   animation: fadeInUp 1.5s ease-out 0.5s both;
 }

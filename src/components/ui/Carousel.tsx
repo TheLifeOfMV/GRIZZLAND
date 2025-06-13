@@ -247,8 +247,8 @@ const Carousel: React.FC<CarouselProps> = ({
         </div>
       )}
 
-      {/* Play/Pause Button (for auto-play) */}
-      {autoPlay && (
+      {/* Play/Pause Button (for auto-play) - Hidden on 3rd slide */}
+      {autoPlay && currentIndex !== 2 && (
         <button
           onClick={() => setIsPlaying(!isPlaying)}
           className="absolute top-4 right-4 z-10 p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:shadow-lg transition-all duration-200 focus-outline"
