@@ -75,13 +75,13 @@ export default function HomePage() {
           </h2>
           <div className="space-y-6 text-lg text-white opacity-90 leading-relaxed">
             <p>
-            Born in the streets of Colombia and shaped by the wild, GRIZZLAND fuses urban edge with outdoor design. More than fashion, it’s a movement, mindset, and identity.
+            Nacida en las calles de Colombia y forjada por lo salvaje, GRIZZLAND fusiona el estilo urbano con el diseño outdoor. Más que moda, es un movimiento, una mentalidad y una identidad.
             </p>
             <p>
-              Our signature silhouette designs capture the essence of modern outdoor design while maintaining the premium quality and attention to detail that defines our brand.
+            Nuestras siluetas icónicas capturan la esencia del diseño outdoor moderno, manteniendo la calidad premium y la atención al detalle que definen nuestra marca.
             </p>
             <p>
-              Every piece is crafted with purpose, designed for those who dare to stand out and express their unique style with confidence.
+            Cada prenda está hecha con propósito, pensada para quienes se atreven a destacar y expresar su estilo único con confianza.
             </p>
           </div>
           <div className="mt-12">

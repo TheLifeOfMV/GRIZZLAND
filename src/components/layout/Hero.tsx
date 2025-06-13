@@ -72,6 +72,13 @@ const Hero: React.FC<ExtendedHeroProps> = ({
             {title}
           </h1>
           
+          {/* Hunter's Club Badge */}
+          <div className="hero-hunters-club">
+            <span className="inline-block text-white/90 text-lg sm:text-xl md:text-2xl font-semibold uppercase tracking-[0.2em] drop-shadow-lg pl-6 pr-8 py-2 rounded-md bg-black/20 backdrop-blur-sm">
+              HUNTER'S CLUB<sup className="text-2xl ml-1">®</sup>
+            </span>
+          </div>
+          
           {/* Subtitle */}
           {subtitle && (
             <p className="hero-subtitle text-xl sm:text-2xl md:text-3xl text-white opacity-95 max-w-3xl mx-auto leading-relaxed font-light tracking-wide drop-shadow-lg">
