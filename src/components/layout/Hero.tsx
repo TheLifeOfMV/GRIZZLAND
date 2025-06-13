@@ -40,28 +40,18 @@ const Hero: React.FC<ExtendedHeroProps> = ({
           </video>
         ) : backgroundImage && !imageError ? (
           <>
-            {/* Full Width Background Image - Adaptive Sizing */}
+            {/* Main Background Image - Optimized Display */}
             <div
               className="absolute inset-0 w-full h-full"
               style={{
-                backgroundImage: `url(${backgroundImage})`,
-                backgroundSize: '100vw auto',
-                backgroundPosition: 'center center',
-                backgroundRepeat: 'no-repeat',
-                minWidth: '100vw',
-                minHeight: '100vh'
-              }}
-            />
-            {/* Backup layer for coverage */}
-            <div
-              className="absolute inset-0 w-full h-full -z-10"
-              style={{
-                backgroundImage: `url(${backgroundImage})`,
+                backgroundImage: `url("${backgroundImage}")`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center center',
                 backgroundRepeat: 'no-repeat',
-                filter: 'blur(2px) brightness(0.7)'
+                width: '100%',
+                height: '100%'
               }}
+              onError={() => setImageError(true)}
             />
           </>
         ) : (
@@ -125,7 +115,7 @@ const DefaultHero: React.FC = () => {
     <Hero
       title="GRIZZLAND"
       subtitle="Not just fashion, identity. Discover our outdoor signature collection."
-      backgroundImage="/images/hero-background.png"
+      backgroundImage="/images/GRIZZLAND%20HOMEPAGE.png"
       ctaText="SHOP NOW"
       ctaLink="/products"
     />
