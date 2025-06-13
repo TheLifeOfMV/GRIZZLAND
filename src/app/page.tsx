@@ -2,6 +2,7 @@ import React from 'react';
 import DefaultHero from '@/components/layout/Hero';
 import ProductCard from '@/components/features/ProductCard';
 import Carousel from '@/components/ui/Carousel';
+import ScrollingBanner from '@/components/ui/ScrollingBanner';
 import { FEATURED_PRODUCTS } from '@/lib/data';
 import Link from 'next/link';
 
@@ -10,6 +11,14 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <DefaultHero />
+
+      {/* Scrolling Banner */}
+      <ScrollingBanner 
+        text="GRIZZLAND HUNTER´S CLUB - INSPIRED BY WILD"
+        speed="medium"
+        backgroundColor="bg-white"
+        textColor="text-primary-bg"
+      />
 
       {/* Featured Products Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">

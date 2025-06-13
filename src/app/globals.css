@@ -707,4 +707,55 @@ input[type="checkbox"]:checked {
     color: black !important;
     box-shadow: none !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCROLLING BANNER ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Observable Implementation: CSS Keyframes for smooth scrolling animation */
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Progressive Construction: Different speed variations for flexibility */
+.animate-scroll-slow {
+  animation: scrollLeft 25s linear infinite;
+}
+
+.animate-scroll-medium {
+  animation: scrollLeft 15s linear infinite;
+}
+
+.animate-scroll-fast {
+  animation: scrollLeft 8s linear infinite;
+}
+
+/* Dependency Transparency: Responsive behavior for different screen sizes */
+@media (max-width: 768px) {
+  .animate-scroll-slow {
+    animation-duration: 20s;
+  }
+  
+  .animate-scroll-medium {
+    animation-duration: 12s;
+  }
+  
+  .animate-scroll-fast {
+    animation-duration: 6s;
+  }
+}
+
+/* Explicit Error Handling: Graceful fallbacks for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-scroll-slow,
+  .animate-scroll-medium,
+  .animate-scroll-fast {
+    animation-play-state: paused;
+  }
 } 

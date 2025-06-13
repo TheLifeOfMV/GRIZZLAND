@@ -119,21 +119,21 @@ const BrandStory: React.FC<BrandStoryProps> = ({ className = '' }) => {
               <div className="space-y-6 text-primary-bg">
                 <p className="text-lg leading-relaxed">
                   <TypewriterText 
-                    text="GRIZZLAND emerged from the intersection of outdoor culture and premium craftsmanship. Founded in Colombia by creators who believe that clothing should empower exploration—it's not just what you wear, it's how you live."
+                    text="GRIZZLAND surgió en la intersección entre la cultura outdoor y la artesanía de alta calidad. Fundada en Colombia por creadores que creen que la ropa debe inspirar la exploración: no se trata solo de lo que llevas puesto, sino de cómo vives."
                     delay={2.0}
                     speed={0.08}
                   />
                 </p>
                 <p className="text-lg leading-relaxed">
                   <TypewriterText 
-                    text="Our journey began with a simple vision: to design modern, functional apparel that honors the spirit of adventure while elevating it through exceptional quality and innovative design."
+                    text="Nuestro camino comenzó con una visión sencilla: diseñar prendas modernas y funcionales que honren el espíritu de la aventura, elevándolo mediante una calidad excepcional y un diseño innovador."
                     delay={5.5}
                     speed={0.08}
                   />
                 </p>
                 <p className="text-lg leading-relaxed font-medium">
                   <TypewriterText 
-                    text="From the city to the mountains, GRIZZLAND is made for those who move freely, think boldly, and wear their identity with pride."
+                    text="Desde la ciudad hasta las montañas, GRIZZLAND está hecha para quienes se mueven con libertad, piensan con valentía y llevan su identidad con orgullo."
                     delay={9.0}
                     speed={0.08}
                   />
