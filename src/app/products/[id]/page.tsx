@@ -16,6 +16,8 @@ import {
   StarIcon 
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import SilhouetteSelector from '@/components/features/SilhouetteSelector';
+import ColorSwatchGroup from '@/components/features/ColorSwatchGroup';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -186,6 +188,21 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             )}
+
+            {/* PHASE 2: SilhouetteSelector Integration */}
+            <div className="mt-6 lg:mt-8">
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 uppercase tracking-wide">
+                Model Preview
+              </h3>
+              <SilhouetteSelector
+                maleImage={product.silhouettes.male}
+                femaleImage={product.silhouettes.female}
+                selectedSilhouette={selectedSilhouette}
+                onSilhouetteChange={setSelectedSilhouette}
+                productName={product.name}
+                className="bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-4 sm:p-6"
+              />
+            </div>
           </div>
 
           {/* Product Info */}
@@ -227,55 +244,22 @@ export default function ProductDetailPage() {
               </p>
             </div>
 
-            {/* Silhouette Selector */}
-            <div>
-              <h3 className="text-lg font-medium text-white uppercase tracking-wide mb-3">
-                Silhouette
-              </h3>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setSelectedSilhouette('male')}
-                  className={`px-4 py-2 border rounded-md transition-all duration-200 ${
-                    selectedSilhouette === 'male'
-                      ? 'border-white bg-white text-primary-bg'
-                      : 'border-white text-white hover:bg-white hover:text-primary-bg'
-                  }`}
-                >
-                  Male
-                </button>
-                <button
-                  onClick={() => setSelectedSilhouette('female')}
-                  className={`px-4 py-2 border rounded-md transition-all duration-200 ${
-                    selectedSilhouette === 'female'
-                      ? 'border-white bg-white text-primary-bg'
-                      : 'border-white text-white hover:bg-white hover:text-primary-bg'
-                  }`}
-                >
-                  Female
-                </button>
-              </div>
-            </div>
-
             {/* Color Selection */}
             <div>
               <h3 className="text-lg font-medium text-white uppercase tracking-wide mb-3">
-                Color: {selectedColor?.name}
+                Color
               </h3>
-              <div className="flex gap-3">
-                {product.colors.map((color) => (
-                  <button
-                    key={color.code}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-12 h-12 rounded-full border-2 transition-all duration-200 hover:scale-110 ${
-                      selectedColor?.code === color.code
-                        ? 'border-white ring-2 ring-primary-bg ring-offset-2 ring-offset-primary-bg'
-                        : 'border-gray-300'
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    aria-label={`Select ${color.name} color`}
-                  />
-                ))}
-              </div>
+              <ColorSwatchGroup
+                colors={product.colors}
+                selectedColor={selectedColor}
+                onColorSelect={setSelectedColor}
+                size="lg"
+                layout="horizontal"
+                showLabels={true}
+                showTooltip={true}
+                maxVisible={5}
+                className="mb-2"
+              />
             </div>
 
             {/* Size Selection */}

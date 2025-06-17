@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/hooks/useCart';
 import { formatPrice } from '@/lib/data';
+import CartItemSizeDropdown from '@/components/features/CartItemSizeDropdown';
 
 interface CartSlideOverProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ interface CartSlideOverProps {
 }
 
 const CartSlideOver: React.FC<CartSlideOverProps> = ({ isOpen, onClose }) => {
-  const { cart, updateQuantity, removeFromCart } = useCart();
+  const { cart, updateQuantity, removeFromCart, updateItemSize } = useCart();
 
   const handleQuantityChange = (productId: string, color: string, size: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -28,6 +29,11 @@ const CartSlideOver: React.FC<CartSlideOverProps> = ({ isOpen, onClose }) => {
 
   const handleRemoveItem = (productId: string, color: string, size: string) => {
     removeFromCart(productId, color, size);
+  };
+
+  const handleSizeChange = (productId: string, color: string, oldSize: string, newSize: string) => {
+    console.log('Cart size change:', { productId, color, oldSize, newSize });
+    updateItemSize(productId, color, oldSize, newSize);
   };
 
   return (
@@ -113,13 +119,27 @@ const CartSlideOver: React.FC<CartSlideOverProps> = ({ isOpen, onClose }) => {
                               </div>
 
                               {/* Product Details */}
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0 space-y-1">
                                 <h4 className="text-sm font-medium text-gray-900 truncate">
                                   {item.product.name}
                                 </h4>
-                                <p className="text-sm text-gray-500">
-                                  {item.selectedColor.name} • {item.selectedSize}
-                                </p>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <span>{item.selectedColor.name}</span>
+                                  <span>•</span>
+                                  <CartItemSizeDropdown
+                                    currentSize={item.selectedSize}
+                                    availableSizes={item.product.sizes}
+                                    onSizeChange={(newSize) => 
+                                      handleSizeChange(
+                                        item.product.id, 
+                                        item.selectedColor.code, 
+                                        item.selectedSize, 
+                                        newSize
+                                      )
+                                    }
+                                    className="inline-block"
+                                  />
+                                </div>
                                 <p className="text-sm font-medium text-gray-900">
                                   {formatPrice(item.product.price)}
                                 </p>
@@ -167,26 +187,72 @@ const CartSlideOver: React.FC<CartSlideOverProps> = ({ isOpen, onClose }) => {
                     {/* Footer - Cart Summary */}
                     {cart.items.length > 0 && (
                       <div className="border-t border-gray-200 p-4 space-y-4">
-                        {/* Order Summary */}
-                        <div className="space-y-2">
+                        {/* PHASE 5: Enhanced Order Summary with Shipping Display */}
+                        <div className="space-y-3">
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Subtotal</span>
+                            <span className="text-gray-600">Subtotal ({cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'})</span>
                             <span className="font-medium text-gray-900">{formatPrice(cart.subtotal)}</span>
                           </div>
+                          
+                          {/* Enhanced Shipping Line Item */}
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Shipping</span>
-                            <span className="font-medium text-gray-900">
+                            <span className="text-gray-600 flex items-center">
+                              Shipping
+                              {cart.shipping === 0 && (
+                                <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                  FREE
+                                </span>
+                              )}
+                            </span>
+                            <span className={`font-medium ${cart.shipping === 0 ? 'text-green-600' : 'text-gray-900'}`}>
                               {cart.shipping === 0 ? 'FREE' : formatPrice(cart.shipping)}
                             </span>
                           </div>
-                          {cart.shipping === 0 && cart.subtotal > 0 && (
-                            <p className="text-xs text-green-600">🎉 You got free shipping!</p>
+                          
+                          {/* Shipping Progress Indicator */}
+                          {cart.shipping > 0 && (
+                            <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-md border border-blue-200">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium">Free shipping progress</span>
+                                <span className="font-semibold">
+                                  {formatPrice(300000 - cart.subtotal)} to go
+                                </span>
+                              </div>
+                              <div className="w-full bg-blue-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ 
+                                    width: `${Math.min((cart.subtotal / 300000) * 100, 100)}%` 
+                                  }}
+                                />
+                              </div>
+                              <p className="mt-2 text-blue-700">
+                                🚚 Add {formatPrice(300000 - cart.subtotal)} more for FREE shipping!
+                              </p>
+                            </div>
                           )}
-                          <div className="border-t border-gray-200 pt-2">
-                            <div className="flex justify-between text-base font-medium">
+
+                          {/* Free Shipping Celebration */}
+                          {cart.shipping === 0 && cart.subtotal > 0 && (
+                            <div className="text-xs text-green-700 bg-green-50 p-3 rounded-md border border-green-200">
+                              <div className="flex items-center">
+                                <span className="text-base mr-2">🎉</span>
+                                <div>
+                                  <p className="font-medium">You got free shipping!</p>
+                                  <p className="text-green-600">Your order qualifies for complimentary delivery</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="border-t border-gray-200 pt-3">
+                            <div className="flex justify-between text-base font-semibold">
                               <span className="text-gray-900">Total</span>
                               <span className="text-gray-900">{formatPrice(cart.total)}</span>
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Including all taxes and fees
+                            </p>
                           </div>
                         </div>
 

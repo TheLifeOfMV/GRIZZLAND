@@ -15,6 +15,20 @@ export interface Product {
     male: string;
     female: string;
   };
+  originalPrice?: number;
+  subcategory?: string;
+  onSale?: boolean;
+  tags?: string[];
+  specifications?: {
+    material: string;
+    fit: string;
+    care: string;
+    origin: string;
+  };
+  reviews?: {
+    average: number;
+    count: number;
+  };
 }
 
 export interface ProductColor {

@@ -9,6 +9,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; payload: { product: Product; color: ProductColor; size: ProductSize; quantity?: number } }
   | { type: 'REMOVE_ITEM'; payload: { productId: string; color: string; size: string } }
   | { type: 'UPDATE_QUANTITY'; payload: { productId: string; color: string; size: string; quantity: number } }
+  | { type: 'UPDATE_SIZE'; payload: { productId: string; color: string; oldSize: string; newSize: string } }
   | { type: 'CLEAR_CART' }
   | { type: 'LOAD_CART'; payload: Cart };
 
@@ -129,6 +130,54 @@ function cartReducer(state: Cart, action: CartAction): Cart {
       };
     }
 
+    case 'UPDATE_SIZE': {
+      const { productId, color, oldSize, newSize } = action.payload;
+      
+      // Find the item to update
+      const itemToUpdate = state.items.find(
+        item => 
+          item.product.id === productId && 
+          item.selectedColor.code === color && 
+          item.selectedSize === oldSize
+      );
+
+      if (!itemToUpdate) return state;
+
+      // Check if an item with the new size already exists
+      const existingNewSizeItem = state.items.find(
+        item => 
+          item.product.id === productId && 
+          item.selectedColor.code === color && 
+          item.selectedSize === newSize
+      );
+
+      let newItems;
+      if (existingNewSizeItem) {
+        // Merge quantities and remove old item
+        newItems = state.items
+          .filter(item => item !== itemToUpdate)
+          .map(item =>
+            item === existingNewSizeItem
+              ? { ...item, quantity: item.quantity + itemToUpdate.quantity }
+              : item
+          );
+      } else {
+        // Update the size
+        newItems = state.items.map(item =>
+          item === itemToUpdate
+            ? { ...item, selectedSize: newSize as ProductSize }
+            : item
+        );
+      }
+
+      const subtotal = newItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+      const shipping = calculateShipping(subtotal);
+      const total = subtotal + shipping;
+      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      return { items: newItems, subtotal, shipping, total, itemCount };
+    }
+
     case 'CLEAR_CART':
       return initialCart;
 
@@ -146,6 +195,7 @@ interface CartContextType {
   addToCart: (product: Product, color: ProductColor, size: ProductSize, quantity?: number) => void;
   removeFromCart: (productId: string, color: string, size: string) => void;
   updateQuantity: (productId: string, color: string, size: string, quantity: number) => void;
+  updateItemSize: (productId: string, color: string, oldSize: string, newSize: string) => void;
   clearCart: () => void;
   isInCart: (productId: string, color: string, size: string) => boolean;
   getItemQuantity: (productId: string, color: string, size: string) => number;
@@ -203,6 +253,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const updateItemSize = (productId: string, color: string, oldSize: string, newSize: string) => {
+    console.log('Updating item size:', { productId, color, oldSize, newSize });
+    dispatch({ 
+      type: 'UPDATE_SIZE', 
+      payload: { productId, color, oldSize, newSize } 
+    });
+  };
+
   const clearCart = () => {
     console.log('Clearing cart');
     dispatch({ type: 'CLEAR_CART' });
@@ -233,6 +291,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addToCart,
       removeFromCart,
       updateQuantity,
+      updateItemSize,
       clearCart,
       isInCart,
       getItemQuantity,
