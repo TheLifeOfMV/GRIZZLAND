@@ -94,28 +94,42 @@ export const profileUpdateSchema = z.object({
   email: emailSchema.optional(),
 });
 
-// Admin login form validation schema (stricter)
+// Base login schema for admin
 export const adminLoginSchema = z.object({
-  email: emailSchema.refine(
-    (email) => {
-      // Add admin email domain validation if needed
-      // const adminDomains = ['admin.grizzland.com', 'grizzland.com'];
-      // return adminDomains.some(domain => email.endsWith(`@${domain}`));
-      return true;
-    },
-    'Please use an authorized admin email address'
-  ),
-  password: loginPasswordSchema,
-  rememberMe: z.boolean().optional(),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
+    .max(100, 'Email is too long')
+    .transform((email) => email.toLowerCase().trim()),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password is too long'),
+  rememberMe: z.boolean().optional().default(false),
 });
 
-// Type inference from schemas
-export type LoginFormData = z.infer<typeof loginSchema>;
-export type RegisterFormData = z.infer<typeof registerSchema>;
-export type PasswordResetFormData = z.infer<typeof passwordResetSchema>;
-export type UpdatePasswordFormData = z.infer<typeof updatePasswordSchema>;
-export type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
-export type AdminLoginFormData = z.infer<typeof adminLoginSchema>;
+// Login form data type
+export type LoginFormData = z.infer<typeof adminLoginSchema>;
+
+// Password validation (for future use)
+export const passwordValidation = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password is too long')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+
+// Email validation
+export const emailValidation = z
+  .string()
+  .min(1, 'Email is required')
+  .email('Please enter a valid email address')
+  .max(100, 'Email is too long')
+  .transform((email) => email.toLowerCase().trim());
 
 // Validation error mapping
 export const getFieldError = (errors: z.ZodError, field: string): string | undefined => {

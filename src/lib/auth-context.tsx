@@ -100,7 +100,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [logEvent]);
 
-  // Sign in function
+  // Sign in function (only for admin)
   const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null }> => {
     try {
       setLoading(true);
@@ -134,51 +134,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [logEvent]);
 
-  // Sign up function
-  const signUp = useCallback(async (
-    email: string, 
-    password: string, 
-    options?: { firstName?: string; lastName?: string }
-  ): Promise<{ error: AuthError | null }> => {
-    try {
-      setLoading(true);
-      
-      const result = await withRetry(async () => {
-        return await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
-          password,
-          options: {
-            data: {
-              first_name: options?.firstName,
-              last_name: options?.lastName,
-              role: 'user', // Default role
-            },
-          },
-        });
-      });
-
-      const { data, error } = result;
-
-      if (error) {
-        const authError = handleSupabaseError(error);
-        logEvent('sign_up', { email, success: false }, authError);
-        return { error: authError };
-      }
-
-      if (data.user) {
-        logEvent('sign_up', { email, success: true, userId: data.user.id });
-      }
-
-      return { error: null };
-    } catch (error) {
-      const authError = handleSupabaseError(error);
-      logEvent('sign_up', { email, success: false }, authError);
-      return { error: authError };
-    } finally {
-      setLoading(false);
-    }
-  }, [logEvent]);
-
   // Sign out function
   const signOut = useCallback(async (): Promise<{ error: AuthError | null }> => {
     try {
@@ -203,59 +158,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [logEvent]);
 
-  // Reset password function
-  const resetPassword = useCallback(async (email: string): Promise<{ error: AuthError | null }> => {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) {
-        const authError = handleSupabaseError(error);
-        logEvent('password_reset', { email, success: false }, authError);
-        return { error: authError };
-      }
-
-      logEvent('password_reset', { email, success: true });
-      return { error: null };
-    } catch (error) {
-      const authError = handleSupabaseError(error);
-      logEvent('password_reset', { email, success: false }, authError);
-      return { error: authError };
-    }
-  }, [logEvent]);
-
-  // Update profile function
-  const updateProfile = useCallback(async (
-    updates: Partial<User['user_metadata']>
-  ): Promise<{ error: AuthError | null }> => {
-    try {
-      if (!user) {
-        return { error: { message: 'No user logged in', code: 'NO_USER' } };
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        data: updates,
-      });
-
-      if (error) {
-        const authError = handleSupabaseError(error);
-        logEvent('profile_update', { success: false }, authError);
-        return { error: authError };
-      }
-
-      logEvent('profile_update', { success: true });
-      return { error: null };
-    } catch (error) {
-      const authError = handleSupabaseError(error);
-      logEvent('profile_update', { success: false }, authError);
-      return { error: authError };
-    }
-  }, [user, logEvent]);
-
-  // Role-based access helpers
-  const isAdmin = user?.user_metadata?.role === 'admin';
-  const isUser = user?.user_metadata?.role === 'user' || (!user?.user_metadata?.role && !!user);
+  // Check if user is admin
+  const isAdmin = useCallback((): boolean => {
+    if (!user) return false;
+    return user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
+  }, [user]);
 
   // Context value
   const value: AuthContextType = {
@@ -264,12 +171,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     initialized,
     signIn,
-    signUp,
     signOut,
-    resetPassword,
-    updateProfile,
-    isAdmin,
-    isUser,
+    isAdmin: isAdmin(),
   };
 
   return (
@@ -279,122 +182,53 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
-// Custom hook to use auth context
+// Hook to use auth context
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
   return context;
 }
 
-// Higher-order component for protecting routes
-export function withAuth<P extends object>(
+// HOC for admin-only components
+export function withAdminAuth<P extends object>(
   Component: React.ComponentType<P>,
   options?: {
-    requiredRole?: 'user' | 'admin';
     redirectTo?: string;
     fallback?: React.ComponentType;
   }
 ) {
-  return function AuthenticatedComponent(props: P) {
-    const { user, loading, initialized, isAdmin, isUser } = useAuth();
-    const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
+  const { redirectTo = '/admin/login', fallback: Fallback } = options || {};
 
-    useEffect(() => {
-      if (!loading && initialized) {
-        if (!user) {
-          // Redirect to login if no user
-          if (router) {
-            router.push(options?.redirectTo || '/auth/login');
-          }
-          return;
-        }
+  return function AdminAuthenticatedComponent(props: P) {
+    const { user, loading, initialized, isAdmin } = useAuth();
 
-        if (options?.requiredRole === 'admin' && !isAdmin) {
-          // Redirect if admin required but user is not admin
-          if (router) {
-            router.push('/auth/login');
-          }
-          return;
-        }
-
-        if (options?.requiredRole === 'user' && !isUser) {
-          // Redirect if user required but not authenticated
-          if (router) {
-            router.push('/auth/login');
-          }
-          return;
-        }
-      }
-    }, [user, loading, initialized, isAdmin, isUser, router]);
-
-    if (loading || !initialized) {
-      return (
-        <div className="min-h-screen bg-primary-bg flex items-center justify-center">
-          <div className="loader"></div>
-        </div>
-      );
+    // Show loading while initializing
+    if (!initialized || loading) {
+      return Fallback ? <Fallback /> : <div>Loading...</div>;
     }
 
-    if (!user) {
-      if (options?.fallback) {
-        const FallbackComponent = options.fallback;
-        return <FallbackComponent />;
+    // Redirect if not admin
+    if (!user || !isAdmin) {
+      if (typeof window !== 'undefined') {
+        window.location.href = redirectTo;
       }
-      return null;
-    }
-
-    if (options?.requiredRole === 'admin' && !isAdmin) {
-      return (
-        <div className="min-h-screen bg-primary-bg flex items-center justify-center px-4">
-          <div className="max-w-md w-full text-center">
-            <h1 className="text-2xl font-bold text-white uppercase tracking-wide mb-4">
-              Access Denied
-            </h1>
-            <p className="text-white opacity-75 mb-6">
-              You don't have permission to access this page.
-            </p>
-            <button
-              onClick={() => router?.push('/')}
-              className="btn-primary"
-            >
-              Go Home
-            </button>
-          </div>
-        </div>
-      );
+      return Fallback ? <Fallback /> : null;
     }
 
     return <Component {...props} />;
   };
 }
 
-// Utility hook for role checking
-export function useRole() {
-  const { user, isAdmin, isUser } = useAuth();
-  
-  return {
-    role: user?.user_metadata?.role || null,
-    isAdmin,
-    isUser,
-    hasRole: (role: 'user' | 'admin') => {
-      if (role === 'admin') return isAdmin;
-      if (role === 'user') return isUser;
-      return false;
-    },
-  };
+// Hook to check admin role
+export function useAdminRole() {
+  const { user, isAdmin } = useAuth();
+  return { user, isAdmin };
 }
 
-// Utility hook for auth loading states
+// Hook to get loading state
 export function useAuthLoading() {
   const { loading, initialized } = useAuth();
-  
-  return {
-    isLoading: loading,
-    isInitialized: initialized,
-    isReady: !loading && initialized,
-  };
+  return loading || !initialized;
 } 

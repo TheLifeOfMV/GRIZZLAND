@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
-import { loginSchema, adminLoginSchema, LoginFormData } from '@/lib/validations/auth';
+import { adminLoginSchema, LoginFormData } from '@/lib/validations/auth';
 import { AuthError } from '@/types/auth';
 
 // Form input component with GRIZZLAND styling
@@ -72,31 +72,30 @@ const FormInput: React.FC<FormInputProps> = ({
   );
 };
 
-// Login form props
-interface LoginFormProps {
-  type?: 'user' | 'admin';
+// Admin login form props
+interface AdminLoginFormProps {
   onSuccess?: (user: any) => void;
   onError?: (error: AuthError) => void;
   redirectTo?: string;
   className?: string;
+  brandLogo?: boolean;
+  showSocialLogin?: boolean;
+  allowGuestAccess?: boolean;
 }
 
-// Main login form component
-const LoginForm: React.FC<LoginFormProps> = ({
-  type = 'user',
+// Admin login form component
+const AdminLoginForm: React.FC<AdminLoginFormProps> = ({
   onSuccess,
   onError,
-  redirectTo,
+  redirectTo = '/admin/dashboard',
   className = '',
+  brandLogo = true,
 }) => {
   const { signIn, loading } = useAuth();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Use appropriate schema based on type
-  const schema = type === 'admin' ? adminLoginSchema : loginSchema;
 
   const {
     register,
@@ -105,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setFocus,
     clearErrors,
   } = useForm<LoginFormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(adminLoginSchema),
     mode: 'onChange',
     defaultValues: {
       email: '',
@@ -145,13 +144,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       onSuccess?.(data);
 
       // Handle redirect
-      if (redirectTo) {
-        router.push(redirectTo);
-      } else {
-        // Default redirects based on type
-        const defaultRedirect = type === 'admin' ? '/admin/dashboard' : '/';
-        router.push(defaultRedirect);
-      }
+      router.push(redirectTo);
     } catch (error) {
       const errorMessage = 'An unexpected error occurred. Please try again.';
       setFormError(errorMessage);
@@ -168,17 +161,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
       {/* Form header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white uppercase tracking-wide mb-2">
-          {type === 'admin' ? 'Admin Login' : 'Welcome Back'}
-        </h1>
-        <p className="text-white opacity-75">
-          {type === 'admin' 
-            ? 'Access your admin dashboard' 
-            : 'Sign in to your GRIZZLAND account'
-          }
-        </p>
-      </div>
+      {brandLogo && (
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white uppercase tracking-wide mb-2">
+            Admin Access
+          </h1>
+          <p className="text-white opacity-75">
+            Secure login for authorized personnel
+          </p>
+        </div>
+      )}
 
       {/* Form error alert */}
       {formError && (
@@ -194,11 +186,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
           label="Email Address"
           name="email"
           type="email"
-          placeholder="Enter your email"
+          placeholder="Enter your admin email"
           error={errors.email?.message}
           register={register}
           required
-          disabled={isSubmitting}
         />
 
         {/* Password field */}
@@ -209,171 +200,69 @@ const LoginForm: React.FC<LoginFormProps> = ({
           placeholder="Enter your password"
           error={errors.password?.message}
           register={register}
-          required
-          disabled={isSubmitting}
-          icon={showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+          icon={
+            showPassword ? (
+              <EyeSlashIcon className="h-5 w-5" />
+            ) : (
+              <EyeIcon className="h-5 w-5" />
+            )
+          }
           onToggle={togglePasswordVisibility}
+          required
         />
 
         {/* Remember me checkbox */}
-        <div className="flex items-center justify-between">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              className="rounded border-white bg-transparent text-white focus:ring-white focus:ring-offset-0"
-              {...register('rememberMe')}
-              disabled={isSubmitting}
-            />
-            <span className="ml-2 text-sm text-white">Remember me</span>
+        <div className="flex items-center">
+          <input
+            id="rememberMe"
+            type="checkbox"
+            className="h-4 w-4 text-white focus:ring-white border-gray-300 rounded"
+            {...register('rememberMe')}
+          />
+          <label htmlFor="rememberMe" className="ml-2 block text-sm text-white">
+            Remember me for 30 days
           </label>
-
-          {/* Forgot password link - only for user login */}
-          {type === 'user' && (
-            <button
-              type="button"
-              onClick={() => router.push('/auth/forgot-password')}
-              className="text-sm text-white hover:text-gray-300 transition-colors duration-300 focus:outline-none focus:underline"
-              disabled={isSubmitting}
-            >
-              Forgot password?
-            </button>
-          )}
         </div>
 
         {/* Submit button */}
         <button
           type="submit"
           disabled={!isValid || isSubmitting || loading}
-          className={`button button-primary button-large w-full flex items-center justify-center ${
-            (!isValid || isSubmitting || loading) ? 'opacity-50 cursor-not-allowed' : ''
+          className={`w-full btn-primary uppercase tracking-wide font-medium ${
+            (!isValid || isSubmitting || loading)
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-white hover:text-primary-bg'
           }`}
         >
           {isSubmitting || loading ? (
-            <>
-              <div className="loader w-5 h-5 mr-2"></div>
+            <span className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
               Signing In...
-            </>
+            </span>
           ) : (
-            `Sign In${type === 'admin' ? ' as Admin' : ''}`
+            'Sign In'
           )}
         </button>
-
-        {/* Security notice for admin */}
-        {type === 'admin' && (
-          <div className="alert alert-info text-sm">
-            <strong>Security Notice:</strong> Admin access is monitored and logged for security purposes.
-          </div>
-        )}
-
-        {/* Sign up link - only for user login */}
-        {type === 'user' && (
-          <div className="text-center pt-4">
-            <p className="text-white opacity-75">
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={() => router.push('/auth/register')}
-                className="font-medium text-white hover:text-gray-300 transition-colors duration-300 focus:outline-none focus:underline"
-                disabled={isSubmitting}
-              >
-                Sign up
-              </button>
-            </p>
-          </div>
-        )}
       </form>
 
-      {/* Additional security info for admin */}
-      {type === 'admin' && (
-        <div className="mt-8 text-center">
-          <p className="text-xs text-white opacity-50">
-            This is a secure area. Unauthorized access is prohibited.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Enhanced login form with additional features
-interface EnhancedLoginFormProps extends LoginFormProps {
-  showSocialLogin?: boolean;
-  allowGuestAccess?: boolean;
-  brandLogo?: boolean;
-}
-
-export const EnhancedLoginForm: React.FC<EnhancedLoginFormProps> = ({
-  brandLogo = true,
-  showSocialLogin = false,
-  allowGuestAccess = false,
-  ...props
-}) => {
-  const router = useRouter();
-
-  return (
-    <div className="min-h-screen bg-primary-bg flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Brand logo */}
-        {brandLogo && (
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-white uppercase tracking-wider">
-              GRIZZLAND
-            </h1>
-            <div className="w-24 h-1 bg-white mx-auto mt-4"></div>
-          </div>
-        )}
-
-        {/* Login form */}
-        <div className="bg-primary-bg border border-white rounded-lg p-8">
-          <LoginForm {...props} />
-
-          {/* Social login options */}
-          {showSocialLogin && (
-            <div className="mt-8">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white opacity-30"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-primary-bg text-white opacity-75">Or continue with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <button
-                  type="button"
-                  className="button button-secondary w-full"
-                  onClick={() => {/* Implement Google login */}}
-                >
-                  Continue with Google
-                </button>
-                <button
-                  type="button"
-                  className="button button-secondary w-full"
-                  onClick={() => {/* Implement GitHub login */}}
-                >
-                  Continue with GitHub
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Guest access */}
-          {allowGuestAccess && (
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="text-sm text-white opacity-75 hover:opacity-100 transition-opacity duration-300 focus:outline-none focus:underline"
-              >
-                Continue as guest
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Security notice */}
+      <div className="mt-8 p-4 border border-yellow-500 rounded-md bg-yellow-500 bg-opacity-10">
+        <h3 className="text-yellow-300 font-semibold text-sm mb-2 uppercase tracking-wide">
+          Security Notice
+        </h3>
+        <ul className="text-yellow-200 text-xs space-y-1">
+          <li>• All login attempts are monitored and logged</li>
+          <li>• Unauthorized access attempts will be reported</li>
+          <li>• Session timeout: 30 minutes of inactivity</li>
+        </ul>
       </div>
     </div>
   );
 };
 
-export default LoginForm; 
+// Export for backward compatibility
+export const EnhancedLoginForm: React.FC<AdminLoginFormProps> = AdminLoginForm;
+export default AdminLoginForm; 

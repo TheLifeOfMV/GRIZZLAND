@@ -1,15 +1,16 @@
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-// Extended User interface with role information
+// Extended user type
 export interface User extends SupabaseUser {
-  user_metadata: {
-    role?: 'user' | 'admin';
+  user_metadata?: {
+    role?: 'admin';
     first_name?: string;
     last_name?: string;
+    [key: string]: any;
   };
-  app_metadata: {
-    provider?: string;
-    providers?: string[];
+  app_metadata?: {
+    role?: 'admin';
+    [key: string]: any;
   };
 }
 
@@ -38,27 +39,29 @@ export interface RegisterFormData {
   agreeToTerms: boolean;
 }
 
-// Authentication error types
+// Auth error type
 export interface AuthError {
   message: string;
-  status?: number;
   code?: string;
-  details?: string;
 }
 
-// Authentication context type
+// Auth event type for logging
+export interface AuthEvent {
+  type: 'sign_in' | 'sign_out' | 'session_refresh' | 'profile_update';
+  timestamp: Date;
+  metadata?: Record<string, unknown>;
+  error?: AuthError;
+}
+
+// Auth context type
 export interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, options?: { firstName?: string; lastName?: string }) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
-  updateProfile: (updates: Partial<User['user_metadata']>) => Promise<{ error: AuthError | null }>;
   isAdmin: boolean;
-  isUser: boolean;
 }
 
 // Route protection props
@@ -77,17 +80,6 @@ export interface ValidationResult {
 
 // Social authentication providers
 export type AuthProvider = 'google' | 'github' | 'facebook' | 'apple';
-
-// Authentication events for logging
-export interface AuthEvent {
-  type: 'sign_in' | 'sign_up' | 'sign_out' | 'password_reset' | 'profile_update' | 'session_refresh';
-  userId?: string;
-  email?: string;
-  provider?: string;
-  timestamp: string;
-  metadata?: Record<string, unknown>;
-  error?: AuthError;
-}
 
 // Session storage configuration
 export interface SessionConfig {
