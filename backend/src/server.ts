@@ -11,6 +11,7 @@ import cartRoutes from './routes/v1/cart';
 import checkoutRoutes from './routes/v1/checkout';
 import adminRoutes from './routes/v1/admin';
 import promoRoutes from './routes/v1/promo';
+import contactRoutes from './routes/v1/contact';
 
 /**
  * GRIZZLAND Backend API Server
@@ -81,7 +82,8 @@ class GrizzlandServer {
           promo_codes: 'enabled',
           low_stock_alerts: 'enabled',
           inventory_management: 'enabled',
-          circuit_breaker: 'enabled'
+          circuit_breaker: 'enabled',
+          contact_system: 'enabled'
         }
       });
     });
@@ -91,6 +93,16 @@ class GrizzlandServer {
     
     // Public routes (no authentication required)
     apiV1.use('/products', optionalAuthMiddleware, productsRoutes);
+    
+    // Contact routes (mixed authentication: submit is public, admin endpoints require auth)
+    apiV1.use('/contact', (req, res, next) => {
+      // Apply admin auth only for /admin/* endpoints
+      if (req.path.startsWith('/admin/')) {
+        return adminAuthMiddleware(req, res, next);
+      }
+      // Public endpoint for form submission
+      next();
+    }, contactRoutes);
     
     // Protected routes (authentication required)
     apiV1.use('/cart', supabaseAuthMiddleware, cartRoutes);
@@ -116,7 +128,10 @@ class GrizzlandServer {
             'GET /health': 'Server health check',
             'GET /api/v1/products': 'Get all products with optional filters',
             'GET /api/v1/products/:id': 'Get product by ID',
-            'POST /api/v1/promo/validate': 'Validate promo code without redeeming'
+            'POST /api/v1/promo/validate': 'Validate promo code without redeeming',
+            'POST /api/v1/contact': 'Submit contact form (no authentication required)',
+            'GET /api/v1/contact/health': 'Contact service health check',
+            'GET /api/v1/contact/docs': 'Contact API documentation'
           },
           authenticated: {
             'GET /api/v1/cart': 'Get user cart',
@@ -141,7 +156,11 @@ class GrizzlandServer {
             'GET /api/v1/promo/stats': 'Get promo code statistics',
             'GET /api/v1/admin/alerts': 'Get low stock alerts',
             'POST /api/v1/admin/alerts/:id/acknowledge': 'Acknowledge low stock alert',
-            'GET /api/v1/admin/alerts/summary': 'Get alerts summary for dashboard'
+            'GET /api/v1/admin/alerts/summary': 'Get alerts summary for dashboard',
+            'GET /api/v1/contact/admin/submissions': 'Get all contact submissions',
+            'GET /api/v1/contact/admin/submissions/:id': 'Get specific contact submission',
+            'PUT /api/v1/contact/admin/submissions/:id/status': 'Update contact submission status',
+            'GET /api/v1/contact/admin/stats': 'Get contact statistics'
           }
         },
         authentication: {
@@ -158,6 +177,11 @@ class GrizzlandServer {
             description: 'Persistent low stock alert system with admin acknowledgment',
             endpoints: ['/api/v1/admin/alerts/*'],
             features: ['severity levels', 'auto-creation', 'admin acknowledgment', 'dashboard integration']
+          },
+          contact_system: {
+            description: 'Complete contact form system with email notifications and admin management',
+            endpoints: ['/api/v1/contact/*'],
+            features: ['public form submission', 'email notifications', 'admin dashboard', 'status management', 'structured logging']
           }
         }
       });
@@ -194,6 +218,7 @@ class GrizzlandServer {
 
 📋 Available API Endpoints:
   • Products: /api/v1/products
+  • Contact: /api/v1/contact (🔓 Mixed Auth) [NEW]
   • Cart: /api/v1/cart (🔒 Auth Required)
   • Checkout: /api/v1/checkout (🔒 Auth Required)
   • Promo Codes: /api/v1/promo (🔓 Mixed Auth) [NEW]
@@ -203,6 +228,7 @@ class GrizzlandServer {
 🆕 New Features in non_core_important batch:
   • 🏷️  Promo Code System: Generation, validation, redemption with usage tracking
   • 📊 Low Stock Alerts: Real-time inventory monitoring with admin dashboard
+  • 📞 Contact System: Public form submission with admin management [NEW]
   • 🔄 Circuit Breaker: Automatic retry with exponential backoff
   • 📝 Enhanced Logging: Structured logging for all operations
 

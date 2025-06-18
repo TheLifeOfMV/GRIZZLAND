@@ -18,6 +18,18 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
 
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      setIsShopDropdownOpen(false);
+    };
+    
+    if (isShopDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [isShopDropdownOpen]);
+
   const navigation = [
     { name: 'Home', href: '/' },
     { 
@@ -70,6 +82,10 @@ const Header = () => {
                       <Link
                         href={item.href}
                         className="nav-link-dropdown text-white hover:text-gray-300 text-sm font-medium uppercase tracking-wide transition-colors duration-300 focus-outline inline-flex items-center"
+                        onClick={(e) => {
+                          // Ensure navigation works even if dropdown interferes
+                          window.location.href = item.href;
+                        }}
                       >
                         {item.name}
                         <span className={`ml-1 text-xs transition-transform duration-200 ${isShopDropdownOpen ? 'rotate-180' : ''}`}>
@@ -83,6 +99,7 @@ const Header = () => {
                           isShopDropdownOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
                         }`}
                         style={{ zIndex: 9999 }}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {item.categories?.map((category, index) => (
                           <Link
@@ -91,6 +108,7 @@ const Header = () => {
                             className={`dropdown-item block px-4 py-3 text-sm font-medium text-primary-bg uppercase tracking-wide transition-all duration-200 hover:bg-primary-bg hover:text-white ${
                               index !== item.categories.length - 1 ? 'border-b border-gray-100' : ''
                             }`}
+                            onClick={() => setIsShopDropdownOpen(false)}
                           >
                             {category.name}
                           </Link>

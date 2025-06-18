@@ -9,11 +9,13 @@ import {
   UsersIcon,
   ChartBarIcon,
   CogIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import AdminProductsList from '@/components/admin/ProductsList';
+import ContactSubmissionsList from '@/components/admin/ContactSubmissionsList';
 import type { Metadata } from 'next';
 
 /**
@@ -62,6 +64,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: HomeIcon },
     { id: 'products', label: 'Productos', icon: CubeIcon },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCartIcon },
+    { id: 'contact', label: 'Contactos', icon: EnvelopeIcon },
     { id: 'customers', label: 'Clientes', icon: UsersIcon },
     { id: 'analytics', label: 'Analíticas', icon: ChartBarIcon },
     { id: 'settings', label: 'Configuración', icon: CogIcon }
@@ -94,6 +97,8 @@ const AdminDashboard: React.FC = () => {
     switch (activeTab) {
       case 'products':
         return <AdminProductsList />;
+      case 'contact':
+        return <ContactSubmissionsList />;
       case 'dashboard':
         return (
           <div className="bg-white rounded-lg p-6">
