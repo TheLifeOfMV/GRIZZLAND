@@ -2,8 +2,17 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase, handleSupabaseError, withRetry, logAuthEvent } from '@/lib/supabase';
-import { AuthContextType, User, AuthError, AuthEvent } from '@/types/auth';
+import { supabase, handleSupabaseError, withRetry } from '@/lib/supabase';
+import { AuthContextType, User, AuthError } from '@/types/auth';
+
+// MONOCODE: Observable Implementation - Structured Logging
+const logAuthEvent = (event: string, metadata: Record<string, any> = {}) => {
+  console.log('AUTH_EVENT', {
+    timestamp: new Date().toISOString(),
+    event,
+    ...metadata
+  });
+};
 
 // Create the auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -13,31 +22,23 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Auth provider component
+// MONOCODE: Progressive Construction - Minimal AuthProvider implementation
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [initialized, setInitialized] = useState<boolean>(false);
 
-  // Helper function to log auth events
-  const logEvent = useCallback((event: AuthEvent['type'], metadata?: Record<string, unknown>, error?: AuthError) => {
-    logAuthEvent(event, {
-      userId: user?.id,
-      email: user?.email,
-      ...metadata,
-    }, error);
-  }, [user]);
-
-  // Initialize authentication
+  // MONOCODE: Observable Implementation - Initialize authentication with structured logging
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
+        logAuthEvent('AUTH_INIT_START');
         setLoading(true);
         
-        // Check for mock admin session first
+        // MONOCODE: Explicit Error Handling - Check mock admin session first
         const adminToken = localStorage.getItem('admin_token');
         const adminUser = localStorage.getItem('admin_user');
         
@@ -58,22 +59,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
               setUser(mockUser as User);
               setInitialized(true);
               setLoading(false);
-              logEvent('session_refresh', { mock: true, userId: mockUser.id });
+              logAuthEvent('AUTH_INIT_SUCCESS', { type: 'mock_admin', userId: mockUser.id });
               return;
             }
           } catch (e) {
-            // Clear invalid stored data
+            logAuthEvent('AUTH_INIT_ERROR', { error: 'Invalid stored admin data' });
             localStorage.removeItem('admin_token');
             localStorage.removeItem('admin_user');
           }
         }
         
-        // Get initial session from Supabase
+        // MONOCODE: Explicit Error Handling - Get initial session from Supabase
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting initial session:', error);
-          logEvent('session_refresh', {}, handleSupabaseError(error));
+          logAuthEvent('AUTH_INIT_ERROR', { error: error.message });
         }
 
         if (mounted) {
@@ -81,34 +81,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(initialSession?.user as User || null);
           setInitialized(true);
           setLoading(false);
+          logAuthEvent('AUTH_INIT_SUCCESS', { 
+            type: 'supabase', 
+            hasSession: !!initialSession,
+            userId: initialSession?.user?.id 
+          });
         }
 
-        // Set up auth state listener
+        // MONOCODE: Observable Implementation - Set up auth state listener with logging
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, newSession) => {
             if (!mounted) return;
 
-            console.log('Auth state changed:', event, newSession?.user?.email);
+            logAuthEvent('AUTH_STATE_CHANGE', { 
+              event, 
+              hasSession: !!newSession,
+              userId: newSession?.user?.id 
+            });
             
             setSession(newSession);
             setUser(newSession?.user as User || null);
             setLoading(false);
-
-            // Log auth events
-            switch (event) {
-              case 'SIGNED_IN':
-                logEvent('sign_in', { provider: newSession?.user?.app_metadata?.provider });
-                break;
-              case 'SIGNED_OUT':
-                logEvent('sign_out');
-                break;
-              case 'TOKEN_REFRESHED':
-                logEvent('session_refresh');
-                break;
-              case 'USER_UPDATED':
-                logEvent('profile_update');
-                break;
-            }
           }
         );
 
@@ -116,7 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           subscription.unsubscribe();
         };
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        logAuthEvent('AUTH_INIT_FATAL_ERROR', { error: (error as Error).message });
         if (mounted) {
           setLoading(false);
           setInitialized(true);
@@ -129,22 +122,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       mounted = false;
     };
-  }, [logEvent]);
+  }, []); // MONOCODE: Deterministic State - Empty dependencies to prevent infinite loop
 
-  // Sign in function (with fallback for admin)
+  // MONOCODE: Explicit Error Handling - Sign in function with admin fallback
   const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null }> => {
     try {
+      logAuthEvent('SIGN_IN_ATTEMPT', { email });
       setLoading(true);
       
-      // Admin test credentials - temporary for development
+      // MONOCODE: Progressive Construction - Admin test credentials
       const adminCredentials = {
         email: 'admin@grizzland.com',
         password: 'Admin123!'
       };
 
-      // Check for admin test credentials first
+      // MONOCODE: Graceful Fallbacks - Check for admin test credentials first
       if (email.trim().toLowerCase() === adminCredentials.email && password === adminCredentials.password) {
-        // Create mock user object
         const mockUser = {
           id: 'admin-mock-001',
           email: adminCredentials.email,
@@ -160,7 +153,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           aud: 'authenticated'
         };
 
-        // Create mock session
         const mockSession = {
           access_token: 'mock-admin-token',
           token_type: 'bearer',
@@ -173,15 +165,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(mockSession as any);
         setUser(mockUser as any);
         
-        // Store token for persistence
         localStorage.setItem('admin_token', 'mock-admin-token');
         localStorage.setItem('admin_user', JSON.stringify(mockUser));
         
-        logEvent('sign_in', { email, success: true, userId: mockUser.id, mock: true });
+        logAuthEvent('SIGN_IN_SUCCESS', { type: 'admin_mock', userId: mockUser.id });
         return { error: null };
       }
 
-      // Try Supabase authentication for regular users
+      // MONOCODE: Dependency Transparency - Try Supabase authentication
       const result = await withRetry(async () => {
         return await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
@@ -193,71 +184,67 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error) {
         const authError = handleSupabaseError(error);
-        logEvent('sign_in', { email, success: false }, authError);
+        logAuthEvent('SIGN_IN_ERROR', { email, error: authError.message });
         return { error: authError };
       }
 
       if (data.user) {
-        logEvent('sign_in', { email, success: true, userId: data.user.id });
+        logAuthEvent('SIGN_IN_SUCCESS', { type: 'supabase', userId: data.user.id });
+        return { error: null };
       }
 
-      return { error: null };
+      logAuthEvent('SIGN_IN_ERROR', { email, error: 'Sign in failed' });
+      return { error: { message: 'Sign in failed', code: 'SIGN_IN_FAILED' } };
     } catch (error) {
-      const authError = handleSupabaseError(error);
-      logEvent('sign_in', { email, success: false }, authError);
-      return { error: authError };
+      logAuthEvent('SIGN_IN_FATAL_ERROR', { email, error: (error as Error).message });
+      return { error: { message: 'An unexpected error occurred', code: 'UNEXPECTED_ERROR' } };
     } finally {
       setLoading(false);
     }
-  }, [logEvent]);
+  }, []);
 
-  // Sign out function
+  // MONOCODE: Explicit Error Handling - Sign out function
   const signOut = useCallback(async (): Promise<{ error: AuthError | null }> => {
     try {
+      logAuthEvent('SIGN_OUT_ATTEMPT');
       setLoading(true);
       
-      // Clear mock admin session
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
       
-      // Clear state
-      setSession(null);
-      setUser(null);
-      
       const { error } = await supabase.auth.signOut();
-
+      
       if (error) {
         const authError = handleSupabaseError(error);
-        logEvent('sign_out', { success: false }, authError);
+        logAuthEvent('SIGN_OUT_ERROR', { error: authError.message });
         return { error: authError };
       }
 
-      logEvent('sign_out', { success: true });
+      setSession(null);
+      setUser(null);
+      logAuthEvent('SIGN_OUT_SUCCESS');
+      
       return { error: null };
     } catch (error) {
-      const authError = handleSupabaseError(error);
-      logEvent('sign_out', { success: false }, authError);
-      return { error: authError };
+      logAuthEvent('SIGN_OUT_FATAL_ERROR', { error: (error as Error).message });
+      return { error: { message: 'An unexpected error occurred', code: 'UNEXPECTED_ERROR' } };
     } finally {
       setLoading(false);
     }
-  }, [logEvent]);
+  }, []);
 
-  // Check if user is admin
-  const isAdmin = useCallback((): boolean => {
-    if (!user) return false;
-    return user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin';
-  }, [user]);
+  // MONOCODE: Deterministic State - Check if user is admin
+  const isAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin';
 
-  // Context value
+  // MONOCODE: Observable Implementation - Context value with clear state
   const value: AuthContextType = {
     user,
     session,
     loading,
     initialized,
+    isAdmin,
     signIn,
     signOut,
-    isAdmin: isAdmin(),
   };
 
   return (
@@ -267,7 +254,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
-// Hook to use auth context
+// Hook to use the auth context
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -276,7 +263,7 @@ export function useAuth(): AuthContextType {
   return context;
 }
 
-// HOC for admin-only components
+// MONOCODE: Progressive Construction - HOC for admin-only components
 export function withAdminAuth<P extends object>(
   Component: React.ComponentType<P>,
   options?: {
@@ -284,36 +271,33 @@ export function withAdminAuth<P extends object>(
     fallback?: React.ComponentType;
   }
 ) {
-  const { redirectTo = '/admin/login', fallback: Fallback } = options || {};
-
   return function AdminAuthenticatedComponent(props: P) {
-    const { user, loading, initialized, isAdmin } = useAuth();
-
-    // Show loading while initializing
+    const { user, loading, isAdmin, initialized } = useAuth();
+    
     if (!initialized || loading) {
-      return Fallback ? <Fallback /> : <div>Loading...</div>;
+      return <div>Loading...</div>;
     }
-
-    // Redirect if not admin
+    
     if (!user || !isAdmin) {
-      if (typeof window !== 'undefined') {
-        window.location.href = redirectTo;
+      if (options?.fallback) {
+        const FallbackComponent = options.fallback;
+        return <FallbackComponent />;
       }
-      return Fallback ? <Fallback /> : null;
+      return <div>Access denied</div>;
     }
-
+    
     return <Component {...props} />;
   };
 }
 
-// Hook to check admin role
+// MONOCODE: Observable Implementation - Hook for admin role checking
 export function useAdminRole() {
-  const { user, isAdmin } = useAuth();
-  return { user, isAdmin };
+  const { isAdmin, user, loading } = useAuth();
+  return { isAdmin, user, loading };
 }
 
-// Hook to get loading state
+// Hook for auth loading state
 export function useAuthLoading() {
-  const { loading, initialized } = useAuth();
-  return loading || !initialized;
+  const { loading } = useAuth();
+  return loading;
 } 

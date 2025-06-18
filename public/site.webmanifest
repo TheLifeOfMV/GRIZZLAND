@@ -1,0 +1,17 @@
+{
+  "name": "GRIZZLAND",
+  "short_name": "GRIZZLAND", 
+  "description": "Premium Streetwear - Inspired by Wild",
+  "icons": [
+    {
+      "src": "/images/LOGO.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#1a2c28",
+  "background_color": "#1a2c28",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+} 
