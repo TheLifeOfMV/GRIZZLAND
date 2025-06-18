@@ -90,13 +90,30 @@ export class ProductService {
   }
 
   /**
-   * Get product by ID
+   * Get product by ID with enhanced metadata validation
+   * Ensures complete color, silhouette, and size data for UI components
    */
   async getProductById(id: string): Promise<Product> {
     return this.withRetry(async () => {
+      const startTime = Date.now();
+      
       const { data, error } = await this.supabase
         .from('products')
-        .select('*')
+        .select(`
+          id,
+          name,
+          price,
+          description,
+          images,
+          colors,
+          sizes,
+          category,
+          stock_count,
+          featured,
+          silhouettes,
+          created_at,
+          updated_at
+        `)
         .eq('id', id)
         .single();
       
@@ -114,9 +131,75 @@ export class ProductService {
           'FETCH_ERROR'
         );
       }
+
+      // Validate required fields for UI components
+      const validationResult = this.validateProductMetadata(data);
+      
+      // Log product fetch with metadata validation
+      console.log('PRODUCT_FETCHED', {
+        timestamp: new Date().toISOString(),
+        productId: id,
+        productName: data.name,
+        duration: `${Date.now() - startTime}ms`,
+        hasColors: Array.isArray(data.colors) && data.colors.length > 0,
+        hasSilhouettes: data.silhouettes && (data.silhouettes.male || data.silhouettes.female),
+        hasSizes: Array.isArray(data.sizes) && data.sizes.length > 0,
+        stockCount: data.stock_count,
+        validationWarnings: validationResult.warnings
+      });
       
       return data;
     });
+  }
+
+  /**
+   * Validate product metadata for UI components
+   * Ensures data integrity for frontend components
+   */
+  private validateProductMetadata(product: Product): { valid: boolean; warnings: string[] } {
+    const warnings: string[] = [];
+
+    // Validate colors array
+    if (!Array.isArray(product.colors) || product.colors.length === 0) {
+      warnings.push('Product has no colors defined');
+    } else {
+      // Validate color structure
+      product.colors.forEach((color, index) => {
+        if (!color.name || !color.value || !color.code) {
+          warnings.push(`Color at index ${index} is missing required fields (name, value, code)`);
+        }
+      });
+    }
+
+    // Validate silhouettes
+    if (!product.silhouettes || (!product.silhouettes.male && !product.silhouettes.female)) {
+      warnings.push('Product has no silhouette images defined');
+    }
+
+    // Validate sizes array
+    if (!Array.isArray(product.sizes) || product.sizes.length === 0) {
+      warnings.push('Product has no sizes defined');
+    }
+
+    // Validate images array
+    if (!Array.isArray(product.images) || product.images.length === 0) {
+      warnings.push('Product has no images defined');
+    }
+
+    // Log validation warnings if any
+    if (warnings.length > 0) {
+      console.warn('PRODUCT_METADATA_VALIDATION', {
+        timestamp: new Date().toISOString(),
+        productId: product.id,
+        productName: product.name,
+        warnings
+      });
+    }
+
+    return {
+      valid: warnings.length === 0,
+      warnings
+    };
   }
 
   /**

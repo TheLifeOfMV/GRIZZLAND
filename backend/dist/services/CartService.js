@@ -4,9 +4,12 @@ exports.CartService = void 0;
 const supabase_js_1 = require("@supabase/supabase-js");
 const config_1 = require("../config/config");
 const errorHandler_1 = require("../middleware/errorHandler");
+const InventoryService_1 = require("./InventoryService");
+const shippingUtils_1 = require("../utils/shippingUtils");
 class CartService {
     constructor() {
         this.supabase = (0, supabase_js_1.createClient)(config_1.config.supabase.url, config_1.config.supabase.serviceKey);
+        this.inventoryService = new InventoryService_1.InventoryService();
     }
     async withRetry(operation, maxRetries = 3, delay = 1000) {
         let lastError;
@@ -26,19 +29,27 @@ class CartService {
     }
     async addToCart(userId, item) {
         return this.withRetry(async () => {
+            const timestamp = new Date().toISOString();
             if (!item.product_id || !item.selected_color || !item.selected_size || item.quantity <= 0) {
-                throw new errorHandler_1.ApplicationError('Invalid cart item data', 400, 'VALIDATION_ERROR');
+                console.warn('CART_ADD_INVALID_INPUT', {
+                    timestamp,
+                    userId,
+                    item,
+                    reason: 'Missing required fields or invalid quantity'
+                });
+                throw new errorHandler_1.ApplicationError('Invalid cart item data: product_id, selected_color, selected_size, and valid quantity are required', 400, 'VALIDATION_ERROR');
             }
-            const { data: product } = await this.supabase
-                .from('products')
-                .select('stock_count, name')
-                .eq('id', item.product_id)
-                .single();
-            if (!product) {
-                throw new errorHandler_1.ApplicationError('Product not found', 404, 'PRODUCT_NOT_FOUND');
-            }
-            if (product.stock_count < item.quantity) {
-                throw new errorHandler_1.ApplicationError(`Insufficient stock. Only ${product.stock_count} items available`, 400, 'INSUFFICIENT_STOCK');
+            const stockValidation = await this.inventoryService.validateStock(item.product_id, item.quantity, { userId, cartId: `cart_${userId}` });
+            if (!stockValidation.available) {
+                console.warn('CART_ADD_INSUFFICIENT_STOCK', {
+                    timestamp,
+                    userId,
+                    productId: item.product_id,
+                    requestedQuantity: item.quantity,
+                    availableStock: stockValidation.currentStock,
+                    stockValidation
+                });
+                throw new errorHandler_1.ApplicationError(stockValidation.message || 'Insufficient stock', 400, 'INSUFFICIENT_STOCK');
             }
             const { data: existingItem } = await this.supabase
                 .from('cart_items')
@@ -50,8 +61,18 @@ class CartService {
                 .single();
             if (existingItem) {
                 const newQuantity = existingItem.quantity + item.quantity;
-                if (product.stock_count < newQuantity) {
-                    throw new errorHandler_1.ApplicationError(`Insufficient stock. Only ${product.stock_count} items available`, 400, 'INSUFFICIENT_STOCK');
+                const totalStockValidation = await this.inventoryService.validateStock(item.product_id, newQuantity, { userId, cartId: `cart_${userId}` });
+                if (!totalStockValidation.available) {
+                    console.warn('CART_UPDATE_INSUFFICIENT_STOCK', {
+                        timestamp,
+                        userId,
+                        productId: item.product_id,
+                        existingQuantity: existingItem.quantity,
+                        additionalQuantity: item.quantity,
+                        newTotalQuantity: newQuantity,
+                        availableStock: totalStockValidation.currentStock
+                    });
+                    throw new errorHandler_1.ApplicationError(totalStockValidation.message || `Insufficient stock for total quantity ${newQuantity}`, 400, 'INSUFFICIENT_STOCK');
                 }
                 const { data, error } = await this.supabase
                     .from('cart_items')
@@ -65,7 +86,15 @@ class CartService {
                 if (error) {
                     throw new errorHandler_1.ApplicationError(`Failed to update cart item: ${error.message}`, 500, 'UPDATE_ERROR');
                 }
-                console.log('Cart item updated:', { userId, productId: item.product_id, newQuantity });
+                console.log('CART_ITEM_UPDATED', {
+                    timestamp,
+                    userId,
+                    productId: item.product_id,
+                    previousQuantity: existingItem.quantity,
+                    additionalQuantity: item.quantity,
+                    newQuantity,
+                    stockValidation: totalStockValidation
+                });
                 return data;
             }
             else {
@@ -78,9 +107,24 @@ class CartService {
           `)
                     .single();
                 if (error) {
+                    console.error('CART_ADD_DATABASE_ERROR', {
+                        timestamp,
+                        userId,
+                        productId: item.product_id,
+                        error: error.message,
+                        item
+                    });
                     throw new errorHandler_1.ApplicationError(`Failed to add item to cart: ${error.message}`, 500, 'ADD_ERROR');
                 }
-                console.log('Item added to cart:', { userId, productId: item.product_id, quantity: item.quantity });
+                console.log('CART_ITEM_ADDED', {
+                    timestamp,
+                    userId,
+                    productId: item.product_id,
+                    quantity: item.quantity,
+                    selectedSize: item.selected_size,
+                    selectedColor: item.selected_color.name,
+                    stockValidation
+                });
                 return data;
             }
         });
@@ -164,44 +208,107 @@ class CartService {
         });
     }
     async getCartSummary(userId) {
+        const timestamp = new Date().toISOString();
         const items = await this.getCart(userId);
         const subtotal = items.reduce((sum, item) => {
             const price = item.products?.price || 0;
             return sum + (price * item.quantity);
         }, 0);
-        const shipping = config_1.config.shipping.defaultFee;
-        const total = subtotal + shipping;
         const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+        const shippingCalculation = (0, shippingUtils_1.calculateShippingWithRules)({
+            subtotal,
+            userId,
+            timestamp
+        });
+        const total = subtotal + shippingCalculation.fee;
+        console.log('CART_SUMMARY_CALCULATED', {
+            timestamp,
+            userId,
+            itemCount,
+            subtotal,
+            shipping: shippingCalculation.fee,
+            total,
+            shippingMethod: shippingCalculation.method,
+            freeShippingEligible: shippingCalculation.isEligibleForFreeShipping
+        });
         return {
             items,
             subtotal,
-            shipping,
+            shipping: shippingCalculation.fee,
             total,
-            itemCount
+            itemCount,
+            shippingDetails: {
+                method: shippingCalculation.method,
+                freeShippingThreshold: shippingCalculation.freeShippingThreshold,
+                isEligibleForFreeShipping: shippingCalculation.isEligibleForFreeShipping,
+                remainingForFreeShipping: shippingCalculation.remainingForFreeShipping
+            }
         };
     }
     async validateCartForCheckout(userId) {
+        const timestamp = new Date().toISOString();
         const items = await this.getCart(userId);
         const errors = [];
+        const warnings = [];
+        console.log('CART_CHECKOUT_VALIDATION_START', {
+            timestamp,
+            userId,
+            itemCount: items.length
+        });
         if (items.length === 0) {
             errors.push('Cart is empty');
-            return { valid: false, errors, items };
+            return {
+                valid: false,
+                errors,
+                warnings,
+                items,
+                stockValidations: []
+            };
         }
-        for (const item of items) {
-            if (!item.products) {
-                errors.push(`Product information not available for item ${item.id}`);
-                continue;
+        const itemsForValidation = items.map(item => ({
+            productId: item.product_id,
+            quantity: item.quantity
+        }));
+        const bulkValidation = await this.inventoryService.validateMultipleStock(itemsForValidation, { userId, cartId: `checkout_${userId}` });
+        bulkValidation.results.forEach((validation, index) => {
+            const cartItem = items[index];
+            if (!cartItem) {
+                errors.push(`Cart item at index ${index} not found for product ${validation.productId}`);
+                return;
             }
-            if (item.products.stock_count < item.quantity) {
-                errors.push(`Insufficient stock for ${item.products.name}. ` +
-                    `Requested: ${item.quantity}, Available: ${item.products.stock_count}`);
+            if (!validation.available) {
+                errors.push(`${cartItem.products?.name || `Product ${validation.productId}`}: ${validation.message}`);
             }
+            if (validation.warnings) {
+                validation.warnings.forEach(warning => {
+                    warnings.push(`${cartItem.products?.name || validation.productId}: ${warning}`);
+                });
+            }
+        });
+        if (bulkValidation.errors.length > 0) {
+            errors.push(...bulkValidation.errors);
         }
-        return {
+        const result = {
             valid: errors.length === 0,
             errors,
-            items
+            warnings,
+            items,
+            stockValidations: bulkValidation.results
         };
+        console.log('CART_CHECKOUT_VALIDATION_COMPLETE', {
+            timestamp,
+            userId,
+            itemCount: items.length,
+            valid: result.valid,
+            errorCount: errors.length,
+            warningCount: warnings.length,
+            validationSummary: {
+                totalItems: items.length,
+                validItems: bulkValidation.results.filter(v => v.available).length,
+                invalidItems: bulkValidation.results.filter(v => !v.available).length
+            }
+        });
+        return result;
     }
     async moveCartToOrder(userId, orderId) {
         return this.withRetry(async () => {

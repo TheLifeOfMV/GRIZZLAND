@@ -1,6 +1,7 @@
 import { CartItem, CartItemInput } from '../types';
 export declare class CartService {
     private supabase;
+    private inventoryService;
     private withRetry;
     addToCart(userId: string, item: CartItemInput): Promise<CartItem>;
     getCart(userId: string): Promise<CartItem[]>;
@@ -13,11 +14,19 @@ export declare class CartService {
         shipping: number;
         total: number;
         itemCount: number;
+        shippingDetails?: {
+            method: 'standard' | 'express' | 'free';
+            freeShippingThreshold: number;
+            isEligibleForFreeShipping: boolean;
+            remainingForFreeShipping: number;
+        };
     }>;
     validateCartForCheckout(userId: string): Promise<{
         valid: boolean;
         errors: string[];
+        warnings: string[];
         items: CartItem[];
+        stockValidations: any[];
     }>;
     moveCartToOrder(userId: string, orderId: string): Promise<void>;
 }
