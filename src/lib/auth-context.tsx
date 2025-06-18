@@ -37,7 +37,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         setLoading(true);
         
-        // Get initial session
+        // Check for mock admin session first
+        const adminToken = localStorage.getItem('admin_token');
+        const adminUser = localStorage.getItem('admin_user');
+        
+        if (adminToken && adminUser) {
+          try {
+            const mockUser = JSON.parse(adminUser);
+            const mockSession = {
+              access_token: adminToken,
+              token_type: 'bearer',
+              expires_in: 3600,
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              refresh_token: 'mock-refresh-token',
+              user: mockUser
+            };
+            
+            if (mounted) {
+              setSession(mockSession as any);
+              setUser(mockUser as User);
+              setInitialized(true);
+              setLoading(false);
+              logEvent('session_refresh', { mock: true, userId: mockUser.id });
+              return;
+            }
+          } catch (e) {
+            // Clear invalid stored data
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_user');
+          }
+        }
+        
+        // Get initial session from Supabase
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -100,11 +131,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [logEvent]);
 
-  // Sign in function (only for admin)
+  // Sign in function (with fallback for admin)
   const signIn = useCallback(async (email: string, password: string): Promise<{ error: AuthError | null }> => {
     try {
       setLoading(true);
       
+      // Admin test credentials - temporary for development
+      const adminCredentials = {
+        email: 'admin@grizzland.com',
+        password: 'Admin123!'
+      };
+
+      // Check for admin test credentials first
+      if (email.trim().toLowerCase() === adminCredentials.email && password === adminCredentials.password) {
+        // Create mock user object
+        const mockUser = {
+          id: 'admin-mock-001',
+          email: adminCredentials.email,
+          user_metadata: { role: 'admin', name: 'Administrator' },
+          app_metadata: { role: 'admin' },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          email_confirmed_at: new Date().toISOString(),
+          phone: null,
+          confirmed_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          role: 'authenticated',
+          aud: 'authenticated'
+        };
+
+        // Create mock session
+        const mockSession = {
+          access_token: 'mock-admin-token',
+          token_type: 'bearer',
+          expires_in: 3600,
+          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          refresh_token: 'mock-refresh-token',
+          user: mockUser
+        };
+
+        setSession(mockSession as any);
+        setUser(mockUser as any);
+        
+        // Store token for persistence
+        localStorage.setItem('admin_token', 'mock-admin-token');
+        localStorage.setItem('admin_user', JSON.stringify(mockUser));
+        
+        logEvent('sign_in', { email, success: true, userId: mockUser.id, mock: true });
+        return { error: null };
+      }
+
+      // Try Supabase authentication for regular users
       const result = await withRetry(async () => {
         return await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
@@ -138,6 +215,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = useCallback(async (): Promise<{ error: AuthError | null }> => {
     try {
       setLoading(true);
+      
+      // Clear mock admin session
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      
+      // Clear state
+      setSession(null);
+      setUser(null);
       
       const { error } = await supabase.auth.signOut();
 

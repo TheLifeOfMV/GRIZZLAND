@@ -4,12 +4,20 @@ import ProductCard from '@/components/features/ProductCard';
 import Carousel from '@/components/ui/Carousel';
 import ScrollingBanner from '@/components/ui/ScrollingBanner';
 import ProductCategoriesSection from '@/components/features/ProductCategoriesSection';
+import DiscountModal from '@/components/features/DiscountModal';
 import { FEATURED_PRODUCTS } from '@/lib/data';
 import Link from 'next/link';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen">
+      {/* First-Visit Discount Modal */}
+      <DiscountModal 
+        discount="15%" 
+        promoCode="WELCOME15"
+        delayMs={3000}
+      />
+      
       {/* Hero Section */}
       <DefaultHero />
 

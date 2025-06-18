@@ -165,4 +165,6 @@ tmp/
 cache/
 
 # Documentation files (local only)
-Core_essential.md 
+Core_essential.md
+ADMIN_CREDENTIALS.md
+non_core_important.md 

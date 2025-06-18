@@ -59,10 +59,7 @@ export default function AdminLoginPage() {
             </div>
 
             <EnhancedLoginForm
-              type="admin"
               brandLogo={false}
-              showSocialLogin={false}
-              allowGuestAccess={false}
               redirectTo="/admin/dashboard"
             />
 
