@@ -162,4 +162,7 @@ tmp/
 
 # Cache directories
 .cache/
-cache/ 
+cache/
+
+# Documentation files (local only)
+Core_essential.md 
