@@ -248,17 +248,7 @@ const AdminLoginForm: React.FC<AdminLoginFormProps> = ({
         </button>
       </form>
 
-      {/* Security notice */}
-      <div className="mt-8 p-4 border border-yellow-500 rounded-md bg-yellow-500 bg-opacity-10">
-        <h3 className="text-yellow-300 font-semibold text-sm mb-2 uppercase tracking-wide">
-          Security Notice
-        </h3>
-        <ul className="text-yellow-200 text-xs space-y-1">
-          <li>• All login attempts are monitored and logged</li>
-          <li>• Unauthorized access attempts will be reported</li>
-          <li>• Session timeout: 30 minutes of inactivity</li>
-        </ul>
-      </div>
+
     </div>
   );
 };
