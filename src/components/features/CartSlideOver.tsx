@@ -259,10 +259,20 @@ const CartSlideOver: React.FC<CartSlideOverProps> = ({ isOpen, onClose }) => {
                         {/* Checkout Button */}
                         <button
                           type="button"
-                          className="w-full btn-secondary text-primary-bg border-primary-bg hover:bg-primary-bg hover:text-white"
+                          className="w-full btn-secondary text-primary-bg border-primary-bg hover:bg-primary-bg hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={cart.items.length === 0}
                           onClick={() => {
-                            // TODO: Implement checkout functionality
-                            alert('Checkout functionality will be implemented in the next phase!');
+                            // Observable Implementation - Log checkout initiation
+                            console.log('CHECKOUT_INITIATED_FROM_CART', {
+                              timestamp: new Date().toISOString(),
+                              cartItems: cart.items.length,
+                              cartTotal: cart.total,
+                              source: 'cart_slideover'
+                            });
+                            
+                            // Progressive Construction - Navigate to checkout
+                            onClose(); // Close the cart slideover
+                            window.location.href = '/checkout'; // Navigate to checkout page
                           }}
                         >
                           CHECKOUT

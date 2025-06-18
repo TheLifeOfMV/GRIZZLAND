@@ -534,6 +534,79 @@ input[type="checkbox"]:checked {
   @apply w-4 h-4;
 }
 
+/* === CHECKOUT SPECIFIC STYLES === */
+.checkout-step {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.checkout-step.active {
+  @apply opacity-100 transform translate-x-0;
+}
+
+.checkout-step.inactive {
+  @apply opacity-50 transform translate-x-4;
+}
+
+.payment-method-card {
+  @apply p-4 border-2 rounded-lg cursor-pointer transition-all duration-200;
+  @apply border-white border-opacity-30 hover:border-opacity-50;
+}
+
+.payment-method-card.selected {
+  @apply border-white bg-white bg-opacity-10;
+}
+
+.checkout-progress-step {
+  @apply w-10 h-10 rounded-full border-2 flex items-center justify-center;
+  @apply text-sm font-medium uppercase tracking-wider transition-all duration-300;
+}
+
+.checkout-progress-step.active {
+  @apply border-white bg-white text-primary-bg;
+}
+
+.checkout-progress-step.completed {
+  @apply border-white bg-white text-primary-bg;
+}
+
+.checkout-progress-step.inactive {
+  @apply border-white border-opacity-30 text-white text-opacity-50;
+}
+
+.checkout-progress-line {
+  @apply w-16 h-0.5 mx-4 transition-all duration-300;
+}
+
+.checkout-progress-line.completed {
+  @apply bg-white;
+}
+
+.checkout-progress-line.inactive {
+  @apply bg-white bg-opacity-30;
+}
+
+/* Checkout form animations */
+.checkout-form-section {
+  @apply bg-white bg-opacity-5 backdrop-blur-sm rounded-lg p-6;
+  @apply border border-white border-opacity-20;
+}
+
+.checkout-alert {
+  @apply p-4 rounded-lg border;
+}
+
+.checkout-alert.error {
+  @apply bg-red-500 bg-opacity-10 border-red-500 border-opacity-30 text-red-400;
+}
+
+.checkout-alert.success {
+  @apply bg-green-500 bg-opacity-10 border-green-500 border-opacity-30 text-green-400;
+}
+
+.checkout-alert.warning {
+  @apply bg-yellow-400 bg-opacity-20 border-yellow-400 border-opacity-30 text-yellow-400;
+}
+
 /* === RESPONSIVE FORM STYLES === */
 @media (max-width: 768px) {
   .form-input {
@@ -542,6 +615,18 @@ input[type="checkbox"]:checked {
   
   .button {
     @apply w-full justify-center;
+  }
+
+  .checkout-progress-step {
+    @apply w-8 h-8 text-xs;
+  }
+
+  .checkout-progress-line {
+    @apply w-8;
+  }
+
+  .payment-method-card {
+    @apply p-3;
   }
 }
 
