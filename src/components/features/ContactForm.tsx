@@ -4,10 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
-  EnvelopeIcon, 
-  PhoneIcon, 
-  UserIcon,
-  ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
@@ -21,7 +17,6 @@ interface FormInputProps {
   placeholder?: string;
   error?: string;
   register: any;
-  icon?: React.ReactNode;
   disabled?: boolean;
   required?: boolean;
   rows?: number;
@@ -35,7 +30,6 @@ const FormInput: React.FC<FormInputProps> = ({
   placeholder,
   error,
   register,
-  icon,
   disabled = false,
   required = false,
   rows,
@@ -74,11 +68,6 @@ const FormInput: React.FC<FormInputProps> = ({
             disabled={disabled}
             {...register(name)}
           />
-        )}
-        {icon && !isTextarea && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white opacity-75">
-            {icon}
-          </div>
         )}
       </div>
       {error && (
@@ -278,7 +267,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
             placeholder="Enter your full name"
             error={errors.name?.message}
             register={register}
-            icon={<UserIcon className="w-5 h-5" />}
             maxLength={50}
             required
           />
@@ -290,7 +278,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
             placeholder="Enter your email address"
             error={errors.email?.message}
             register={register}
-            icon={<EnvelopeIcon className="w-5 h-5" />}
             maxLength={254}
             required
           />
@@ -305,7 +292,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
             placeholder="+57 300 123 4567"
             error={errors.phone?.message}
             register={register}
-            icon={<PhoneIcon className="w-5 h-5" />}
             required
           />
           
@@ -316,7 +302,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
             placeholder="Brief subject of your inquiry"
             error={errors.subject?.message}
             register={register}
-            icon={<ChatBubbleLeftRightIcon className="w-5 h-5" />}
             maxLength={100}
           />
         </div>
@@ -363,20 +348,6 @@ const ContactForm: React.FC<ContactFormProps> = ({
           </button>
         </div>
       </form>
-
-      {/* Contact information */}
-      <div className="mt-12 pt-8 border-t border-white border-opacity-20">
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-white uppercase tracking-wide mb-4">
-            Other Ways to Reach Us
-          </h3>
-          <div className="space-y-2 text-white opacity-75">
-            <p>📧 support@grizzland.com</p>
-            <p>📞 +57 (1) 234-5678</p>
-            <p>💬 Customer support hours: Mon-Fri 9:00 AM - 6:00 PM (COT)</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
