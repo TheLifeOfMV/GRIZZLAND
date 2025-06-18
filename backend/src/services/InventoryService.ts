@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { config } from '../config/config';
 import { Product, ProductSize, ProductColor } from '../types';
 import { ApplicationError } from '../middleware/errorHandler';
+import { PromoService, LowStockAlert } from './PromoService';
 
 /**
  * GRIZZLAND Inventory Service
@@ -10,6 +11,11 @@ import { ApplicationError } from '../middleware/errorHandler';
  * 
  * Failure Mode: Stock mismatch → Prevent overselling, notify admin
  * Instrumentation: Track stock changes with product ID and timestamp
+ * 
+ * EXTENDED for non_core_important batch:
+ * - Integration with PromoService for low stock alerts
+ * - Enhanced alert system with database persistence
+ * - Admin notification workflow
  */
 
 export interface StockValidationResult {
@@ -44,19 +50,11 @@ export interface StockChange {
   metadata?: Record<string, any>;
 }
 
-export interface LowStockAlert {
-  productId: string;
-  productName: string;
-  currentStock: number;
-  threshold: number;
-  severity: 'warning' | 'critical' | 'out_of_stock';
-  lastRestockDate?: string;
-}
-
 export class InventoryService {
   private supabase = createClient(config.supabase.url, config.supabase.serviceKey);
   private readonly DEFAULT_LOW_STOCK_THRESHOLD = 5;
   private readonly RESERVATION_DURATION_MINUTES = 15; // Cart reservation time
+  private promoService = new PromoService(); // Integration with PromoService
 
   /**
    * Retry wrapper for database operations with circuit breaker pattern
@@ -266,6 +264,7 @@ export class InventoryService {
   /**
    * Decrement stock after successful order
    * Atomic operation with rollback capability
+   * ENHANCED: Integrated low stock alert creation
    */
   async decrementStock(
     productId: string,
@@ -356,7 +355,7 @@ export class InventoryService {
         context
       });
 
-      // Check for low stock alert
+      // ENHANCED: Check for low stock alert using PromoService
       await this.checkLowStockAlert(productId, newStock, product.name);
 
       return stockChange;
@@ -446,6 +445,7 @@ export class InventoryService {
 
   /**
    * Get low stock products for admin alerts
+   * ENHANCED: Uses PromoService for consistent alert management
    */
   async getLowStockProducts(threshold?: number): Promise<LowStockAlert[]> {
     return this.withRetry(async () => {
@@ -475,12 +475,14 @@ export class InventoryService {
         }
 
         return {
+          id: `legacy_${product.id}`, // Legacy format for compatibility
           productId: product.id,
           productName: product.name,
           currentStock: product.stock_count,
           threshold: stockThreshold,
           severity,
-          lastRestockDate: product.updated_at
+          acknowledged: false, // Legacy alerts are not acknowledged
+          createdAt: product.updated_at || new Date().toISOString()
         };
       });
 
@@ -501,30 +503,107 @@ export class InventoryService {
   }
 
   /**
-   * Check and log low stock alerts
+   * ENHANCED: Check and create persistent low stock alerts
+   * Integration with PromoService for database-backed alerts
    */
   private async checkLowStockAlert(productId: string, currentStock: number, productName: string): Promise<void> {
     if (currentStock <= this.DEFAULT_LOW_STOCK_THRESHOLD) {
-      let severity: 'warning' | 'critical' | 'out_of_stock' = 'warning';
-      
-      if (currentStock === 0) {
-        severity = 'out_of_stock';
-      } else if (currentStock <= 2) {
-        severity = 'critical';
+      try {
+        // Create persistent alert using PromoService
+        const alert = await this.promoService.createLowStockAlert(
+          productId,
+          currentStock,
+          this.DEFAULT_LOW_STOCK_THRESHOLD
+        );
+
+        console.log('LOW_STOCK_ALERT_INTEGRATED', {
+          timestamp: new Date().toISOString(),
+          alertId: alert.id,
+          productId,
+          productName,
+          currentStock,
+          severity: alert.severity,
+          threshold: this.DEFAULT_LOW_STOCK_THRESHOLD,
+          action: 'PERSISTENT_ALERT_CREATED'
+        });
+
+      } catch (error) {
+        // Don't fail the stock operation if alert creation fails
+        console.error('LOW_STOCK_ALERT_CREATION_FAILED', {
+          timestamp: new Date().toISOString(),
+          productId,
+          productName,
+          currentStock,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+
+        // Fallback to simple logging
+        console.warn('LOW_STOCK_ALERT_FALLBACK', {
+          timestamp: new Date().toISOString(),
+          productId,
+          productName,
+          currentStock,
+          severity: currentStock === 0 ? 'out_of_stock' : currentStock <= 2 ? 'critical' : 'warning',
+          threshold: this.DEFAULT_LOW_STOCK_THRESHOLD,
+          action: 'NOTIFY_ADMIN'
+        });
       }
+    }
+  }
 
-      console.warn('LOW_STOCK_ALERT', {
+  /**
+   * Get all low stock alerts (both legacy and persistent)
+   */
+  async getAllLowStockAlerts(acknowledged: boolean = false): Promise<LowStockAlert[]> {
+    try {
+      // Get persistent alerts from PromoService
+      const persistentAlerts = await this.promoService.getLowStockAlerts(acknowledged);
+      
+      // If we want unacknowledged alerts, also include legacy low stock products
+      if (!acknowledged) {
+        const legacyAlerts = await this.getLowStockProducts();
+        
+        // Filter out products that already have persistent alerts
+        const persistentProductIds = new Set(persistentAlerts.map(a => a.productId));
+        const filteredLegacyAlerts = legacyAlerts.filter(
+          alert => !persistentProductIds.has(alert.productId)
+        );
+        
+        return [...persistentAlerts, ...filteredLegacyAlerts];
+      }
+      
+      return persistentAlerts;
+      
+    } catch (error) {
+      console.error('FAILED_TO_FETCH_ALL_ALERTS', {
         timestamp: new Date().toISOString(),
-        productId,
-        productName,
-        currentStock,
-        severity,
-        threshold: this.DEFAULT_LOW_STOCK_THRESHOLD,
-        action: 'NOTIFY_ADMIN'
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
+      
+      // Fallback to legacy alerts only
+      return this.getLowStockProducts();
+    }
+  }
 
-      // Future: Send actual notifications to admin
-      // await this.notifyAdminLowStock({ productId, productName, currentStock, severity });
+  /**
+   * Acknowledge low stock alert
+   */
+  async acknowledgeLowStockAlert(alertId: string, adminUserId: string): Promise<void> {
+    try {
+      await this.promoService.acknowledgeLowStockAlert(alertId, adminUserId);
+    } catch (error) {
+      console.error('FAILED_TO_ACKNOWLEDGE_ALERT', {
+        timestamp: new Date().toISOString(),
+        alertId,
+        adminUserId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      
+      throw new ApplicationError(
+        'Failed to acknowledge low stock alert',
+        500,
+        'ALERT_ACKNOWLEDGE_ERROR'
+      );
     }
   }
 

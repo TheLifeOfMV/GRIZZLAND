@@ -1,12 +1,14 @@
 import { Router, Response } from 'express';
 import { ProductService } from '../../services/ProductService';
 import { PaymentService } from '../../services/PaymentService';
+import { InventoryService } from '../../services/InventoryService';
 import { AuthenticatedRequest, ApiResponse, Product } from '../../types';
 import { asyncHandler, ApplicationError } from '../../middleware/errorHandler';
 
 const router = Router();
 const productService = new ProductService();
 const paymentService = new PaymentService();
+const inventoryService = new InventoryService();
 
 // ========================================
 // PRODUCT MANAGEMENT
@@ -345,6 +347,213 @@ router.get('/analytics/sales', asyncHandler(async (req: AuthenticatedRequest, re
     },
     message: `Sales analytics for last ${periodDays} days retrieved successfully`
   });
+}));
+
+// ========================================
+// ALERTS & NOTIFICATIONS (NEW)
+// ========================================
+
+/**
+ * GET /api/v1/admin/alerts
+ * Get all low stock alerts with optional filtering
+ */
+router.get('/alerts', asyncHandler(async (req: AuthenticatedRequest, res: Response<ApiResponse<any>>) => {
+  const acknowledged = req.query.acknowledged === 'true';
+  
+  console.log('ADMIN_ALERTS_REQUEST', {
+    timestamp: new Date().toISOString(),
+    adminUserId: req.user?.id,
+    acknowledged,
+    component: 'AdminAlertsEndpoint'
+  });
+
+  try {
+    const alerts = await inventoryService.getAllLowStockAlerts(acknowledged);
+    
+    // Group alerts by severity for better admin overview
+    const alertsByStatus = alerts.reduce((acc: any, alert) => {
+      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+      return acc;
+    }, {});
+
+    console.log('ADMIN_ALERTS_SUCCESS', {
+      timestamp: new Date().toISOString(),
+      adminUserId: req.user?.id,
+      totalAlerts: alerts.length,
+      alertsByStatus,
+      acknowledged
+    });
+
+    res.json({
+      success: true,
+      data: {
+        alerts,
+        summary: {
+          total: alerts.length,
+          by_severity: alertsByStatus,
+          acknowledged,
+          last_updated: new Date().toISOString()
+        }
+      },
+      message: `Found ${alerts.length} ${acknowledged ? 'acknowledged' : 'unacknowledged'} low stock alerts`
+    });
+
+  } catch (error) {
+    console.error('ADMIN_ALERTS_ERROR', {
+      timestamp: new Date().toISOString(),
+      adminUserId: req.user?.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+
+    throw new ApplicationError(
+      'Failed to fetch low stock alerts',
+      500,
+      'ALERTS_FETCH_ERROR'
+    );
+  }
+}));
+
+/**
+ * POST /api/v1/admin/alerts/:id/acknowledge
+ * Acknowledge a specific low stock alert
+ */
+router.post('/alerts/:id/acknowledge', asyncHandler(async (req: AuthenticatedRequest, res: Response<ApiResponse<any>>) => {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new ApplicationError(
+      'Alert ID is required',
+      400,
+      'VALIDATION_ERROR'
+    );
+  }
+
+  if (!req.user?.id) {
+    throw new ApplicationError(
+      'Admin user ID is required',
+      401,
+      'AUTH_ERROR'
+    );
+  }
+
+  console.log('ADMIN_ALERT_ACKNOWLEDGE_REQUEST', {
+    timestamp: new Date().toISOString(),
+    alertId: id,
+    adminUserId: req.user.id,
+    component: 'AdminAlertsEndpoint'
+  });
+
+  try {
+    await inventoryService.acknowledgeLowStockAlert(id, req.user.id);
+
+    console.log('ADMIN_ALERT_ACKNOWLEDGE_SUCCESS', {
+      timestamp: new Date().toISOString(),
+      alertId: id,
+      adminUserId: req.user.id
+    });
+
+    res.json({
+      success: true,
+      data: {
+        alertId: id,
+        acknowledgedBy: req.user.id,
+        acknowledgedAt: new Date().toISOString()
+      },
+      message: 'Low stock alert acknowledged successfully'
+    });
+
+  } catch (error) {
+    console.error('ADMIN_ALERT_ACKNOWLEDGE_ERROR', {
+      timestamp: new Date().toISOString(),
+      alertId: id,
+      adminUserId: req.user.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+
+    throw new ApplicationError(
+      'Failed to acknowledge low stock alert',
+      500,
+      'ALERT_ACKNOWLEDGE_ERROR'
+    );
+  }
+}));
+
+/**
+ * GET /api/v1/admin/alerts/summary
+ * Get summary of alerts for dashboard widgets
+ */
+router.get('/alerts/summary', asyncHandler(async (req: AuthenticatedRequest, res: Response<ApiResponse<any>>) => {
+  console.log('ADMIN_ALERTS_SUMMARY_REQUEST', {
+    timestamp: new Date().toISOString(),
+    adminUserId: req.user?.id,
+    component: 'AdminAlertsEndpoint'
+  });
+
+  try {
+    // Get both acknowledged and unacknowledged alerts
+    const [unacknowledgedAlerts, acknowledgedAlerts] = await Promise.all([
+      inventoryService.getAllLowStockAlerts(false),
+      inventoryService.getAllLowStockAlerts(true)
+    ]);
+
+    const totalAlerts = unacknowledgedAlerts.length + acknowledgedAlerts.length;
+    
+    // Calculate severity breakdown for unacknowledged alerts
+    const severityBreakdown = unacknowledgedAlerts.reduce((acc: any, alert) => {
+      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+      return acc;
+    }, { warning: 0, critical: 0, out_of_stock: 0 });
+
+    // Calculate recent trends (last 24 hours)
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+    
+    const recentAlerts = unacknowledgedAlerts.filter(alert => 
+      new Date(alert.createdAt) >= twentyFourHoursAgo
+    ).length;
+
+    const summary = {
+      total_alerts: totalAlerts,
+      unacknowledged_alerts: unacknowledgedAlerts.length,
+      acknowledged_alerts: acknowledgedAlerts.length,
+      severity_breakdown: severityBreakdown,
+      recent_alerts_24h: recentAlerts,
+      most_critical: unacknowledgedAlerts
+        .filter(alert => alert.severity === 'out_of_stock' || alert.severity === 'critical')
+        .slice(0, 5), // Top 5 most critical
+      last_updated: new Date().toISOString()
+    };
+
+    console.log('ADMIN_ALERTS_SUMMARY_SUCCESS', {
+      timestamp: new Date().toISOString(),
+      adminUserId: req.user?.id,
+      summary: {
+        totalAlerts,
+        unacknowledged: unacknowledgedAlerts.length,
+        severityBreakdown,
+        recentAlerts
+      }
+    });
+
+    res.json({
+      success: true,
+      data: summary,
+      message: 'Alerts summary retrieved successfully'
+    });
+
+  } catch (error) {
+    console.error('ADMIN_ALERTS_SUMMARY_ERROR', {
+      timestamp: new Date().toISOString(),
+      adminUserId: req.user?.id,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+
+    throw new ApplicationError(
+      'Failed to fetch alerts summary',
+      500,
+      'ALERTS_SUMMARY_ERROR'
+    );
+  }
 }));
 
 export default router; 

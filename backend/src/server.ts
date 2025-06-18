@@ -10,10 +10,12 @@ import productsRoutes from './routes/v1/products';
 import cartRoutes from './routes/v1/cart';
 import checkoutRoutes from './routes/v1/checkout';
 import adminRoutes from './routes/v1/admin';
+import promoRoutes from './routes/v1/promo';
 
 /**
  * GRIZZLAND Backend API Server
  * Comprehensive e-commerce backend with Colombian payment integration
+ * EXTENDED for non_core_important batch: Promo codes and low stock alerts
  */
 class GrizzlandServer {
   public app: express.Application;
@@ -74,7 +76,13 @@ class GrizzlandServer {
         success: true,
         message: 'GRIZZLAND API is running',
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
+        features: {
+          promo_codes: 'enabled',
+          low_stock_alerts: 'enabled',
+          inventory_management: 'enabled',
+          circuit_breaker: 'enabled'
+        }
       });
     });
 
@@ -87,6 +95,9 @@ class GrizzlandServer {
     // Protected routes (authentication required)
     apiV1.use('/cart', supabaseAuthMiddleware, cartRoutes);
     apiV1.use('/checkout', supabaseAuthMiddleware, checkoutRoutes);
+    
+    // Promo routes (mixed authentication: validate is public, redeem requires auth, generate requires admin)
+    apiV1.use('/promo', optionalAuthMiddleware, promoRoutes);
     
     // Admin routes (admin authentication required)
     apiV1.use('/admin', adminAuthMiddleware, adminRoutes);
@@ -105,6 +116,7 @@ class GrizzlandServer {
             'GET /health': 'Server health check',
             'GET /api/v1/products': 'Get all products with optional filters',
             'GET /api/v1/products/:id': 'Get product by ID',
+            'POST /api/v1/promo/validate': 'Validate promo code without redeeming'
           },
           authenticated: {
             'GET /api/v1/cart': 'Get user cart',
@@ -113,7 +125,10 @@ class GrizzlandServer {
             'DELETE /api/v1/cart/:itemId': 'Remove item from cart',
             'POST /api/v1/checkout': 'Process checkout',
             'GET /api/v1/checkout/orders': 'Get user orders',
-            'GET /api/v1/checkout/orders/:id': 'Get order details'
+            'GET /api/v1/checkout/orders/:id': 'Get order details',
+            'POST /api/v1/promo/redeem': 'Redeem promo code',
+            'POST /api/v1/promo/welcome': 'Generate welcome promo code',
+            'GET /api/v1/promo/user-usage': 'Get user promo usage history'
           },
           admin: {
             'POST /api/v1/admin/products': 'Create product',
@@ -121,12 +136,29 @@ class GrizzlandServer {
             'DELETE /api/v1/admin/products/:id': 'Delete product',
             'GET /api/v1/admin/orders': 'Get all orders',
             'PUT /api/v1/admin/orders/:id/status': 'Update order status',
-            'GET /api/v1/admin/analytics': 'Get admin analytics'
+            'GET /api/v1/admin/analytics': 'Get admin analytics',
+            'POST /api/v1/promo/generate': 'Generate promo codes',
+            'GET /api/v1/promo/stats': 'Get promo code statistics',
+            'GET /api/v1/admin/alerts': 'Get low stock alerts',
+            'POST /api/v1/admin/alerts/:id/acknowledge': 'Acknowledge low stock alert',
+            'GET /api/v1/admin/alerts/summary': 'Get alerts summary for dashboard'
           }
         },
         authentication: {
           type: 'Bearer Token (Supabase JWT)',
           header: 'Authorization: Bearer <token>'
+        },
+        new_features: {
+          promo_codes: {
+            description: 'Full promo code management system with generation, validation, and redemption',
+            endpoints: ['/api/v1/promo/*'],
+            features: ['collision prevention', 'usage limits', 'expiration dates', 'usage tracking']
+          },
+          low_stock_alerts: {
+            description: 'Persistent low stock alert system with admin acknowledgment',
+            endpoints: ['/api/v1/admin/alerts/*'],
+            features: ['severity levels', 'auto-creation', 'admin acknowledgment', 'dashboard integration']
+          }
         }
       });
     });
@@ -164,7 +196,15 @@ class GrizzlandServer {
   • Products: /api/v1/products
   • Cart: /api/v1/cart (🔒 Auth Required)
   • Checkout: /api/v1/checkout (🔒 Auth Required)
+  • Promo Codes: /api/v1/promo (🔓 Mixed Auth) [NEW]
   • Admin: /api/v1/admin (🔐 Admin Required)
+  • Admin Alerts: /api/v1/admin/alerts (🔐 Admin Required) [NEW]
+
+🆕 New Features in non_core_important batch:
+  • 🏷️  Promo Code System: Generation, validation, redemption with usage tracking
+  • 📊 Low Stock Alerts: Real-time inventory monitoring with admin dashboard
+  • 🔄 Circuit Breaker: Automatic retry with exponential backoff
+  • 📝 Enhanced Logging: Structured logging for all operations
 
 💳 Payment Methods Supported:
   • Bank Transfer (Transferencia Bancaria)
@@ -177,6 +217,7 @@ class GrizzlandServer {
   • Request timeout (${config.security.requestTimeout}ms)
   • JWT authentication via Supabase
   • Role-based access control
+  • Circuit breaker pattern
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       `);
     });
@@ -199,8 +240,8 @@ class GrizzlandServer {
     });
 
     // Handle unhandled promise rejections
-    process.on('unhandledRejection', (error) => {
-      console.error('❌ Unhandled Promise Rejection:', error);
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
       process.exit(1);
     });
   }
